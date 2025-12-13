@@ -6,16 +6,22 @@
     <title>JustBuzz - Nudge The World</title>
     <style>
         body { background-color: #008080; font-family: 'Courier New', monospace; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; overflow: hidden; }
-        .window { background: #c0c0c0; border: 2px solid #fff; border-right-color: #404040; border-bottom-color: #404040; padding: 2px; width: 320px; box-shadow: 4px 4px 0px rgba(0,0,0,0.5); margin-bottom: 20px;}
+        
+        /* Main Window Style */
+        .window { background: #c0c0c0; border: 2px solid #fff; border-right-color: #404040; border-bottom-color: #404040; padding: 2px; width: 340px; box-shadow: 4px 4px 0px rgba(0,0,0,0.5); margin-bottom: 15px;}
         .title-bar { background: navy; color: white; padding: 4px; font-weight: bold; display: flex; justify-content: space-between; }
         .content { padding: 20px; text-align: center; }
+        
+        /* Button Style */
         .btn { background: #c0c0c0; border: 2px solid #fff; border-right-color: #404040; border-bottom-color: #404040; padding: 15px 30px; font-size: 24px; font-weight: bold; color: red; cursor: pointer; width: 100%; }
         .btn:active { border: 2px solid #404040; border-right-color: #fff; border-bottom-color: #fff; transform: translate(2px, 2px); }
         
-        /* BOX POOLSAZ (Money Box) */
-        .money-window { background: #ffffcc; border: 2px solid #000; width: 320px; padding: 5px; text-align: center; font-size: 12px; box-shadow: 4px 4px 0px rgba(0,0,0,0.5); }
-        .wallet-address { background: #fff; border: 1px solid #999; padding: 5px; font-size: 10px; word-break: break-all; margin-top: 5px; user-select: all;}
-
+        /* Money/Donate Box Style */
+        .money-window { background: #ffffcc; border: 2px solid #000; width: 340px; padding: 5px; text-align: center; font-size: 12px; box-shadow: 4px 4px 0px rgba(0,0,0,0.5); overflow-y: auto; max-height: 300px; }
+        .crypto-label { font-weight: bold; margin-top: 8px; color: #000; display: block; text-align: left; margin-left: 5px;}
+        .wallet-address { background: #fff; border: 1px solid #999; padding: 4px; font-size: 10px; word-break: break-all; cursor: text; user-select: all; font-family: monospace; text-align: center;}
+        
+        /* Shake Animation */
         .shake-animation { animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both; background-color: #ff0000 !important; }
         @keyframes shake { 10%, 90% { transform: translate3d(-5px, -5px, 0); } 20%, 80% { transform: translate3d(5px, 5px, 0); } 30%, 50%, 70% { transform: translate3d(-10px, 10px, 0); } 40%, 60% { transform: translate3d(10px, -10px, 0); } }
     </style>
@@ -34,24 +40,47 @@
 
     <!-- Monetization Box -->
     <div class="money-window">
-        <b>📢 OWN THIS SCREEN!</b>
-        <p>Want to put YOUR message/ad here for 24h?</p>
-        <p>Send $20 SOL/USDC to:</p>
-        <div class="wallet-address">YOUR_SOL_WALLET_HERE</div>
-        <p style="font-size:10px; margin-top:5px;">(Then DM proof on X/Twitter)</p>
+        <b style="font-size: 14px; color: red;">📢 OWN THIS SCREEN!</b>
+        <p>Want to put YOUR message/ad here?</p>
+        <p style="margin-bottom: 5px;">1. Send Crypto ($20+)</p>
+        
+        <span class="crypto-label">🔹 SOLANA (Fastest):</span>
+        <div class="wallet-address">4jtjysarsDeReyKe1sjWJmSDbjFKqM23ReEN3b9GV7LU</div>
+
+        <span class="crypto-label">🔹 ETH / BNB / BASE:</span>
+        <div class="wallet-address">0x59f492C2a291D353e985f8dE919Ee0499E2cB6CE</div>
+
+        <span class="crypto-label">🔹 BITCOIN:</span>
+        <div class="wallet-address">18FhGqF3JzGx3pVaFv6vje5JxeqSSiMMXH</div>
+        
+        <p style="margin-top: 10px; margin-bottom: 2px;">2. Click below to send proof & text:</p>
+        
+        <!-- TELEGRAM BUTTON -->
+        <a href="https://t.me/justbuzzfun" target="_blank" style="display: block; background: #0088cc; color: white; text-decoration: none; padding: 10px; margin-top: 5px; border-radius: 4px; font-weight: bold;">
+            📩 Send Proof to Admin
+        </a>
+
+        <p style="font-size:9px; margin-top:5px; color: #555;">(Your ad will appear here within minutes)</p>
     </div>
 
     <script src="/socket.io/socket.io.js"></script>
     <script>
         const socket = io();
         const btn = document.getElementById('buzzBtn');
+        // Ensure the file is named buzz.mp3 (with a DOT)
         const audio = new Audio('buzz.mp3');
+        
         btn.addEventListener('click', () => socket.emit('buzz-trigger'));
+        
         socket.on('shake-world', () => {
-            audio.currentTime = 0; audio.play().catch(()=>{});
+            // Play sound only if user interacted with page once
+            audio.currentTime = 0; 
+            audio.play().catch(()=>{ console.log("User must interact first for sound") });
+            
             document.body.classList.add('shake-animation');
             setTimeout(() => document.body.classList.remove('shake-animation'), 500);
         });
+        
         socket.on('update-stats', (d) => { document.getElementById('u').innerText = d.online; document.getElementById('b').innerText = d.buzzes; });
     </script>
 </body>
