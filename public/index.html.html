@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JustBuzz - Nudge The World</title>
+    <style>
+        body { background-color: #008080; font-family: 'Courier New', monospace; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; overflow: hidden; }
+        .window { background: #c0c0c0; border: 2px solid #fff; border-right-color: #404040; border-bottom-color: #404040; padding: 2px; width: 300px; box-shadow: 4px 4px 0px rgba(0,0,0,0.5); }
+        .title-bar { background: navy; color: white; padding: 4px; font-weight: bold; display: flex; justify-content: space-between; }
+        .content { padding: 20px; text-align: center; }
+        .btn { background: #c0c0c0; border: 2px solid #fff; border-right-color: #404040; border-bottom-color: #404040; padding: 15px 30px; font-size: 24px; font-weight: bold; color: red; cursor: pointer; }
+        .btn:active { border: 2px solid #404040; border-right-color: #fff; border-bottom-color: #fff; transform: translate(2px, 2px); }
+        .shake-animation { animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both; background-color: #ff0000 !important; }
+        @keyframes shake { 10%, 90% { transform: translate3d(-5px, -5px, 0); } 20%, 80% { transform: translate3d(5px, 5px, 0); } 30%, 50%, 70% { transform: translate3d(-10px, 10px, 0); } 40%, 60% { transform: translate3d(10px, -10px, 0); } }
+    </style>
+</head>
+<body>
+    <div class="window">
+        <div class="title-bar"><span>Global Buzz</span><span>X</span></div>
+        <div class="content">
+            <p>WARNING: This button shakes everyone's screen.</p><br>
+            <button id="buzzBtn" class="btn">BUZZ!</button>
+            <div style="margin-top:15px; font-size:12px;"><p>Users: <span id="u">0</span> | Buzzes: <span id="b">0</span></p></div>
+        </div>
+    </div>
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
+        const btn = document.getElementById('buzzBtn');
+        const audio = new Audio('buzz.mp3');
+        btn.addEventListener('click', () => socket.emit('buzz-trigger'));
+        socket.on('shake-world', () => {
+            audio.currentTime = 0; audio.play().catch(()=>{});
+            document.body.classList.add('shake-animation');
+            setTimeout(() => document.body.classList.remove('shake-animation'), 500);
+        });
+        socket.on('update-stats', (d) => { document.getElementById('u').innerText = d.online; document.getElementById('b').innerText = d.buzzes; });
+    </script>
+</body>
+</html>
