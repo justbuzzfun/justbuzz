@@ -6,24 +6,56 @@
     <title>JustBuzz - Nudge The World</title>
     <style>
         body { background-color: #008080; font-family: 'Courier New', monospace; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; overflow: hidden; }
-        .window { background: #c0c0c0; border: 2px solid #fff; border-right-color: #404040; border-bottom-color: #404040; padding: 2px; width: 300px; box-shadow: 4px 4px 0px rgba(0,0,0,0.5); }
+        
+        /* Main Window Style */
+        .window { background: #c0c0c0; border: 2px solid #fff; border-right-color: #404040; border-bottom-color: #404040; padding: 2px; width: 340px; box-shadow: 4px 4px 0px rgba(0,0,0,0.5); margin-bottom: 15px;}
         .title-bar { background: navy; color: white; padding: 4px; font-weight: bold; display: flex; justify-content: space-between; }
         .content { padding: 20px; text-align: center; }
-        .btn { background: #c0c0c0; border: 2px solid #fff; border-right-color: #404040; border-bottom-color: #404040; padding: 15px 30px; font-size: 24px; font-weight: bold; color: red; cursor: pointer; }
+        
+        /* Button Style */
+        .btn { background: #c0c0c0; border: 2px solid #fff; border-right-color: #404040; border-bottom-color: #404040; padding: 15px 30px; font-size: 24px; font-weight: bold; color: red; cursor: pointer; width: 100%; }
         .btn:active { border: 2px solid #404040; border-right-color: #fff; border-bottom-color: #fff; transform: translate(2px, 2px); }
+        
+        /* Money/Donate Box Style */
+        .money-window { background: #ffffcc; border: 2px solid #000; width: 340px; padding: 5px; text-align: center; font-size: 12px; box-shadow: 4px 4px 0px rgba(0,0,0,0.5); overflow-y: auto; max-height: 250px; }
+        .crypto-label { font-weight: bold; margin-top: 8px; color: #000; display: block; text-align: left; margin-left: 5px;}
+        .wallet-address { background: #fff; border: 1px solid #999; padding: 4px; font-size: 10px; word-break: break-all; cursor: text; user-select: all; font-family: monospace; text-align: center;}
+        
+        /* Shake Animation */
         .shake-animation { animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both; background-color: #ff0000 !important; }
         @keyframes shake { 10%, 90% { transform: translate3d(-5px, -5px, 0); } 20%, 80% { transform: translate3d(5px, 5px, 0); } 30%, 50%, 70% { transform: translate3d(-10px, 10px, 0); } 40%, 60% { transform: translate3d(10px, -10px, 0); } }
     </style>
 </head>
 <body>
+
+    <!-- Main App -->
     <div class="window">
         <div class="title-bar"><span>Global Buzz</span><span>X</span></div>
         <div class="content">
-            <p>WARNING: This button shakes everyone's screen.</p><br>
+            <p>WARNING: Shakes EVERY screen.</p><br>
             <button id="buzzBtn" class="btn">BUZZ!</button>
             <div style="margin-top:15px; font-size:12px;"><p>Users: <span id="u">0</span> | Buzzes: <span id="b">0</span></p></div>
         </div>
     </div>
+
+    <!-- Monetization Box -->
+    <div class="money-window">
+        <b style="font-size: 14px; color: red;">📢 OWN THIS SCREEN!</b>
+        <p>Want to put YOUR message/ad here?</p>
+        <p style="margin-bottom: 5px;">Donate & DM proof to get featured.</p>
+        
+        <span class="crypto-label">🔹 SOLANA (Recommended):</span>
+        <div class="wallet-address">4jtjysarsDeReyKe1sjWJmSDbjFKqM23ReEN3b9GV7LU</div>
+
+        <span class="crypto-label">🔹 ETH / BNB / BASE:</span>
+        <div class="wallet-address">0x59f492C2a291D353e985f8dE919Ee0499E2cB6CE</div>
+
+        <span class="crypto-label">🔹 BITCOIN:</span>
+        <div class="wallet-address">18FhGqF3JzGx3pVaFv6vje5JxeqSSiMMXH</div>
+        
+        <p style="font-size:10px; margin-top:10px;">(Click address to copy)</p>
+    </div>
+
     <script src="/socket.io/socket.io.js"></script>
     <script>
         const socket = io();
