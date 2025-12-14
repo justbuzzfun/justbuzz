@@ -9,19 +9,28 @@ const io = new Server(server);
 
 app.use(express.static(path.join(__dirname, 'public')));
 
-let totalBuzzes = 0;
+// --- FAKE DATA FOR VIRAL EFFECT ---
+// شروع شمارنده از یک عدد بالا (برای اینکه سایت شلوغ به نظر بیاد)
+let totalVisits = 1240; 
+let totalBuzzes = 850;
 
 io.on('connection', (socket) => {
-  io.emit('update-stats', { online: io.engine.clientsCount, buzzes: totalBuzzes });
+  // هر کی وصل شد، یکی به آمار کل اضافه کن
+  totalVisits++;
+  
+  // ارسال آمار به همه
+  io.emit('update-stats', { 
+    visits: totalVisits, 
+    buzzes: totalBuzzes 
+  });
 
   socket.on('buzz-trigger', () => {
     totalBuzzes++;
-    io.emit('shake-world'); // دستور لرزش برای همه
-    io.emit('update-stats', { online: io.engine.clientsCount, buzzes: totalBuzzes });
-  });
-
-  socket.on('disconnect', () => {
-    io.emit('update-stats', { online: io.engine.clientsCount, buzzes: totalBuzzes });
+    io.emit('shake-world');
+    io.emit('update-stats', { 
+      visits: totalVisits, 
+      buzzes: totalBuzzes 
+    });
   });
 });
 
