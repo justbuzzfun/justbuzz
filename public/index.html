@@ -3,85 +3,143 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>JustBuzz - Nudge The World</title>
+    <title>System Update...</title>
     <style>
-        body { background-color: #008080; font-family: 'Courier New', monospace; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; overflow: hidden; }
+        body { background-color: #000; color: #0f0; font-family: 'Courier New', monospace; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; overflow: hidden; text-align: center; }
         
-        .window { background: #c0c0c0; border: 2px solid #fff; border-right-color: #404040; border-bottom-color: #404040; padding: 2px; width: 340px; box-shadow: 4px 4px 0px rgba(0,0,0,0.5); margin-bottom: 15px;}
-        .title-bar { background: navy; color: white; padding: 4px; font-weight: bold; display: flex; justify-content: space-between; }
-        .content { padding: 20px; text-align: center; }
+        /* 1. HOME SCREEN (فروشگاه) */
+        #home-screen { display: none; width: 100%; max-width: 400px; }
+        .logo { font-size: 40px; margin-bottom: 20px; animation: glitch 1s infinite; }
+        .input-box { background: #111; border: 2px solid lime; color: #fff; padding: 15px; width: 80%; font-size: 18px; text-align: center; margin-bottom: 10px; border-radius: 5px;}
+        .create-btn { background: lime; color: #000; font-weight: bold; padding: 15px 30px; border: none; font-size: 20px; cursor: pointer; width: 90%; border-radius: 5px; animation: pulse 2s infinite;}
         
-        .btn { background: #c0c0c0; border: 2px solid #fff; border-right-color: #404040; border-bottom-color: #404040; padding: 15px 30px; font-size: 24px; font-weight: bold; color: red; cursor: pointer; width: 100%; }
-        .btn:active { border: 2px solid #404040; border-right-color: #fff; border-bottom-color: #fff; transform: translate(2px, 2px); }
-        
-        .money-window { background: #ffffcc; border: 2px solid #000; width: 340px; padding: 5px; text-align: center; font-size: 12px; box-shadow: 4px 4px 0px rgba(0,0,0,0.5); overflow-y: auto; max-height: 300px; }
-        .crypto-label { font-weight: bold; margin-top: 8px; color: #000; display: block; text-align: left; margin-left: 5px;}
-        .wallet-address { background: #fff; border: 1px solid #999; padding: 4px; font-size: 10px; word-break: break-all; cursor: text; user-select: all; font-family: monospace; text-align: center;}
-        
-        /* Stats Styling */
-        .stats-box { margin-top: 15px; font-size: 14px; color: #000; border: 1px inset #fff; padding: 5px; background: #ddd; }
-        
-        .shake-animation { animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both; background-color: #ff0000 !important; }
-        @keyframes shake { 10%, 90% { transform: translate3d(-5px, -5px, 0); } 20%, 80% { transform: translate3d(5px, 5px, 0); } 30%, 50%, 70% { transform: translate3d(-10px, 10px, 0); } 40%, 60% { transform: translate3d(10px, -10px, 0); } }
+        /* 2. PRANK SCREEN (صفحه وحشت) */
+        #prank-screen { display: none; width: 100%; height: 100%; position: absolute; top: 0; left: 0; background: red; z-index: 999; flex-direction: column; align-items: center; justify-content: center;}
+        .scary-text { font-size: 30px; font-weight: bold; color: yellow; background: #000; padding: 10px; border: 5px solid yellow; transform: rotate(-5deg); margin-bottom: 20px;}
+        .victim-msg { font-size: 20px; color: #fff; font-weight: bold; text-shadow: 2px 2px 0 #000; margin-bottom: 30px;}
+        .revenge-btn { background: #fff; color: red; font-weight: bold; padding: 20px; text-decoration: none; border-radius: 10px; border: 3px solid #000; font-size: 18px; box-shadow: 5px 5px 0 #000;}
+
+        /* 3. FAKE LOADING (اولش الکی لود میشه) */
+        #loading-screen { display: none; }
+        .loader { border: 5px solid #333; border-top: 5px solid #fff; border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; margin-bottom: 20px;}
+
+        /* ANIMATIONS */
+        .shake { animation: shake 0.1s infinite; }
+        @keyframes shake { 0% { transform: translate(1px, 1px) rotate(0deg); } 10% { transform: translate(-1px, -2px) rotate(-1deg); } 20% { transform: translate(-3px, 0px) rotate(1deg); } 30% { transform: translate(3px, 2px) rotate(0deg); } 40% { transform: translate(1px, -1px) rotate(1deg); } 50% { transform: translate(-1px, 2px) rotate(-1deg); } 60% { transform: translate(-3px, 1px) rotate(0deg); } 70% { transform: translate(3px, 1px) rotate(-1deg); } 80% { transform: translate(-1px, -1px) rotate(1deg); } 90% { transform: translate(1px, 2px) rotate(0deg); } 100% { transform: translate(1px, -2px) rotate(-1deg); } }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        @keyframes glitch { 0% { opacity: 1; } 50% { opacity: 0.8; } 100% { opacity: 1; } }
+        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
     </style>
 </head>
 <body>
 
-    <div class="window">
-        <div class="title-bar"><span>Global Buzz v1.0</span><span>X</span></div>
-        <div class="content">
-            <p>WARNING: Shakes EVERY screen.</p><br>
-            <button id="buzzBtn" class="btn">BUZZ!</button>
-            
-            <!-- CHANGED: Stats are now cumulative -->
-            <div class="stats-box">
-                <p>🌎 Total Visits: <b id="u">Loading...</b></p>
-                <p>⚡ Total Shakes: <b id="b">Loading...</b></p>
-            </div>
+    <!-- صفحه اول: ساخت لینک (برای شکارچی) -->
+    <div id="home-screen">
+        <div class="logo">☠️ PRANK VIRUS</div>
+        <p>Scare your friends with a FAKE HACK!</p>
+        <p style="font-size: 12px; color: #888;">Enter your name to create a link:</p>
+        
+        <input type="text" id="nameInput" class="input-box" placeholder="Your Name (e.g. Ali)">
+        <button class="create-btn" onclick="generateLink()">GET LINK 🔗</button>
+        
+        <div id="resultArea" style="display:none; margin-top: 20px; background: #222; padding: 10px; border: 1px dashed #fff;">
+            <p style="color: yellow; font-size: 12px;">Send this link to victim:</p>
+            <input type="text" id="linkOutput" style="width:100%; background:#000; color:#fff; border:none; text-align:center; font-size:12px;" readonly>
+            <button onclick="copyLink()" style="margin-top:5px; background:orange; border:none; padding:5px; cursor:pointer;">COPY</button>
+        </div>
+
+        <div style="margin-top: 30px; border-top: 1px solid #333; padding-top: 10px;">
+            <p style="color: cyan; font-size: 12px;">💰 WANT TO SEE WHO CLICKED?</p>
+            <a href="https://t.me/justbuzzfun" target="_blank" style="color: #fff; background: #0088cc; padding: 5px 10px; text-decoration: none; border-radius: 3px; font-size: 11px;">Buy Premium Spy ($5)</a>
         </div>
     </div>
 
-    <div class="money-window">
-        <b style="font-size: 14px; color: red;">📢 OWN THIS SCREEN!</b>
-        <p>Want to put YOUR message/ad here?</p>
-        <p style="margin-bottom: 5px;">1. Send Crypto ($20+)</p>
-        
-        <span class="crypto-label">🔹 SOLANA (Fastest):</span>
-        <div class="wallet-address">4jtjysarsDeReyKe1sjWJmSDbjFKqM23ReEN3b9GV7LU</div>
-
-        <span class="crypto-label">🔹 ETH / BNB / BASE:</span>
-        <div class="wallet-address">0x59f492C2a291D353e985f8dE919Ee0499E2cB6CE</div>
-
-        <span class="crypto-label">🔹 BITCOIN:</span>
-        <div class="wallet-address">18FhGqF3JzGx3pVaFv6vje5JxeqSSiMMXH</div>
-        
-        <p style="margin-top: 10px; margin-bottom: 2px;">2. Click below to send proof & text:</p>
-        
-        <a href="https://t.me/justbuzzfun" target="_blank" style="display: block; background: #0088cc; color: white; text-decoration: none; padding: 10px; margin-top: 5px; border-radius: 4px; font-weight: bold;">
-            📩 Send Proof to Admin
-        </a>
+    <!-- صفحه لودینگ الکی (برای قربانی) -->
+    <div id="loading-screen">
+        <div class="loader"></div>
+        <p>System Updating... Please wait.</p>
+        <p style="font-size: 10px; color: #666;">Do not turn off your device.</p>
     </div>
+
+    <!-- صفحه وحشت (انفجار) -->
+    <div id="prank-screen" onclick="enableSound()">
+        <div class="scary-text">⚠️ SYSTEM HACKED ⚠️</div>
+        <div class="victim-msg" id="victimMsg">YOUR DATA IS DELETED</div>
+        
+        <br><br>
+        <a href="/" class="revenge-btn">↩️ PRANK SOMEONE ELSE</a>
+        <p style="color: #fff; margin-top: 20px; font-size: 10px;">(Tap screen for sound)</p>
+    </div>
+
+    <!-- SOUND -->
+    <audio id="siren" loop>
+        <source src="https://www.soundjay.com/mechanical/sounds/smoke-detector-1.mp3" type="audio/mpeg">
+    </audio>
 
     <script src="/socket.io/socket.io.js"></script>
     <script>
         const socket = io();
-        const btn = document.getElementById('buzzBtn');
-        const audio = new Audio('buzz.mp3');
-        
-        btn.addEventListener('click', () => socket.emit('buzz-trigger'));
-        
-        socket.on('shake-world', () => {
-            audio.currentTime = 0; 
-            audio.play().catch(()=>{});
-            document.body.classList.add('shake-animation');
-            setTimeout(() => document.body.classList.remove('shake-animation'), 500);
-        });
-        
-        // Update stats with Visits instead of Online
-        socket.on('update-stats', (d) => { 
-            document.getElementById('u').innerText = d.visits; 
-            document.getElementById('b').innerText = d.buzzes; 
-        });
+        const urlParams = new URLSearchParams(window.location.search);
+        const senderName = urlParams.get('name');
+
+        const homeScreen = document.getElementById('home-screen');
+        const loadingScreen = document.getElementById('loading-screen');
+        const prankScreen = document.getElementById('prank-screen');
+        const siren = document.getElementById('siren');
+
+        if (senderName) {
+            // --- حالت قربانی (Victim Mode) ---
+            homeScreen.style.display = 'none';
+            loadingScreen.style.display = 'flex'; // اول لودینگ نشون بده
+            loadingScreen.style.flexDirection = 'column';
+            loadingScreen.style.alignItems = 'center';
+            loadingScreen.style.justifyContent = 'center';
+            loadingScreen.style.height = '100vh';
+
+            // بعد از ۳ ثانیه، انفجار!
+            setTimeout(() => {
+                loadingScreen.style.display = 'none';
+                prankScreen.style.display = 'flex';
+                document.body.classList.add('shake'); // لرزش سایت
+                document.title = "HACKED! HACKED! HACKED!";
+                
+                document.getElementById('victimMsg').innerText = "PRANKED BY: " + senderName.toUpperCase();
+                
+                // ارسال سیگنال لرزش فیزیکی (ویبره گوشی)
+                socket.emit('buzz-trigger');
+                
+                // تلاش برای پخش صدا
+                siren.play().catch(e => console.log("Click to play"));
+                if (navigator.vibrate) navigator.vibrate([1000, 100, 1000, 100, 1000]);
+            }, 3000);
+
+        } else {
+            // --- حالت خانه (Home Mode) ---
+            homeScreen.style.display = 'block';
+        }
+
+        // توابع کمکی
+        function generateLink() {
+            const name = document.getElementById('nameInput').value;
+            if(!name) return alert("Enter a name!");
+            
+            const link = window.location.origin + "/?name=" + encodeURIComponent(name);
+            document.getElementById('linkOutput').value = link;
+            document.getElementById('resultArea').style.display = 'block';
+        }
+
+        function copyLink() {
+            const copyText = document.getElementById("linkOutput");
+            copyText.select();
+            document.execCommand("copy");
+            alert("Copied! Send it to your victim.");
+        }
+
+        function enableSound() {
+            siren.play();
+        }
+
+        socket.on('shake-world', () => {});
     </script>
 </body>
 </html>
