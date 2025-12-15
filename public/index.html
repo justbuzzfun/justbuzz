@@ -3,143 +3,127 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>System Update...</title>
+    <title>The Universe Protocol</title>
     <style>
-        body { background-color: #000; color: #0f0; font-family: 'Courier New', monospace; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; overflow: hidden; text-align: center; }
+        body { margin: 0; overflow: hidden; background: #000; color: #fff; font-family: 'Cinzel', serif; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; }
         
-        /* 1. HOME SCREEN (فروشگاه) */
-        #home-screen { display: none; width: 100%; max-width: 400px; }
-        .logo { font-size: 40px; margin-bottom: 20px; animation: glitch 1s infinite; }
-        .input-box { background: #111; border: 2px solid lime; color: #fff; padding: 15px; width: 80%; font-size: 18px; text-align: center; margin-bottom: 10px; border-radius: 5px;}
-        .create-btn { background: lime; color: #000; font-weight: bold; padding: 15px 30px; border: none; font-size: 20px; cursor: pointer; width: 90%; border-radius: 5px; animation: pulse 2s infinite;}
+        /* SPACE BACKGROUND */
+        .space { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; background: radial-gradient(ellipse at bottom, #1b2735 0%, #090a0f 100%); }
+        .stars { width: 1px; height: 1px; background: transparent; box-shadow: 100px 200px #FFF , 300px 400px #FFF , 500px 100px #FFF; animation: animStar 50s linear infinite; }
+        .stars:after { content: " "; position: absolute; top: 2000px; width: 1px; height: 1px; background: transparent; box-shadow: 100px 200px #FFF , 300px 400px #FFF , 500px 100px #FFF; }
         
-        /* 2. PRANK SCREEN (صفحه وحشت) */
-        #prank-screen { display: none; width: 100%; height: 100%; position: absolute; top: 0; left: 0; background: red; z-index: 999; flex-direction: column; align-items: center; justify-content: center;}
-        .scary-text { font-size: 30px; font-weight: bold; color: yellow; background: #000; padding: 10px; border: 5px solid yellow; transform: rotate(-5deg); margin-bottom: 20px;}
-        .victim-msg { font-size: 20px; color: #fff; font-weight: bold; text-shadow: 2px 2px 0 #000; margin-bottom: 30px;}
-        .revenge-btn { background: #fff; color: red; font-weight: bold; padding: 20px; text-decoration: none; border-radius: 10px; border: 3px solid #000; font-size: 18px; box-shadow: 5px 5px 0 #000;}
+        /* MAIN CONTAINER */
+        .container { z-index: 10; text-align: center; background: rgba(255, 255, 255, 0.05); padding: 40px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.1); backdrop-filter: blur(10px); box-shadow: 0 0 30px rgba(100, 200, 255, 0.2); max-width: 90%; width: 400px; animation: float 6s ease-in-out infinite;}
+        
+        h1 { font-size: 24px; letter-spacing: 5px; margin-bottom: 10px; color: #d4af37; text-shadow: 0 0 10px #d4af37; }
+        p { font-size: 12px; color: #ccc; margin-bottom: 30px; line-height: 1.6; }
+        
+        /* INPUT AREA */
+        textarea { width: 100%; height: 100px; background: rgba(0,0,0,0.5); border: 1px solid #d4af37; color: #fff; padding: 10px; font-family: inherit; font-size: 16px; border-radius: 5px; resize: none; outline: none; text-align: center; }
+        textarea::placeholder { color: #555; }
+        
+        /* BUTTON */
+        .btn { margin-top: 20px; background: linear-gradient(45deg, #d4af37, #f8f0c5); border: none; padding: 15px 40px; font-size: 16px; font-weight: bold; color: #000; cursor: pointer; border-radius: 50px; box-shadow: 0 0 20px rgba(212, 175, 55, 0.5); transition: 0.3s; letter-spacing: 2px;}
+        .btn:hover { transform: scale(1.05); box-shadow: 0 0 40px rgba(212, 175, 55, 0.8); }
 
-        /* 3. FAKE LOADING (اولش الکی لود میشه) */
-        #loading-screen { display: none; }
-        .loader { border: 5px solid #333; border-top: 5px solid #fff; border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; margin-bottom: 20px;}
+        /* PAYMENT MODAL (HIDDEN) */
+        #payModal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 20; align-items: center; justify-content: center; flex-direction: column; }
+        .pay-box { background: #111; border: 2px solid #d4af37; padding: 30px; text-align: center; border-radius: 10px; width: 90%; max-width: 350px; }
+        .wallet { background: #222; color: #d4af37; padding: 10px; font-family: monospace; font-size: 12px; margin: 15px 0; border: 1px dashed #555; user-select: all; word-break: break-all;}
+        .confirm-btn { background: #0088cc; color: #fff; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block; margin-top: 10px; font-weight: bold;}
 
         /* ANIMATIONS */
-        .shake { animation: shake 0.1s infinite; }
-        @keyframes shake { 0% { transform: translate(1px, 1px) rotate(0deg); } 10% { transform: translate(-1px, -2px) rotate(-1deg); } 20% { transform: translate(-3px, 0px) rotate(1deg); } 30% { transform: translate(3px, 2px) rotate(0deg); } 40% { transform: translate(1px, -1px) rotate(1deg); } 50% { transform: translate(-1px, 2px) rotate(-1deg); } 60% { transform: translate(-3px, 1px) rotate(0deg); } 70% { transform: translate(3px, 1px) rotate(-1deg); } 80% { transform: translate(-1px, -1px) rotate(1deg); } 90% { transform: translate(1px, 2px) rotate(0deg); } 100% { transform: translate(1px, -2px) rotate(-1deg); } }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        @keyframes glitch { 0% { opacity: 1; } 50% { opacity: 0.8; } 100% { opacity: 1; } }
-        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
+        @keyframes animStar { from { transform: translateY(0px); } to { transform: translateY(-2000px); } }
+        @keyframes float { 0% { transform: translateY(0px); } 50% { transform: translateY(-20px); } 100% { transform: translateY(0px); } }
+        
+        /* START OVERLAY */
+        #startOverlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 999; display: flex; align-items: center; justify-content: center; cursor: pointer;}
+        .tap-text { font-size: 20px; animation: pulse 2s infinite; color: #888; letter-spacing: 3px;}
+        @keyframes pulse { 0% { opacity: 0.5; } 50% { opacity: 1; } 100% { opacity: 0.5; } }
     </style>
+    <!-- FONT -->
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&display=swap" rel="stylesheet">
 </head>
 <body>
 
-    <!-- صفحه اول: ساخت لینک (برای شکارچی) -->
-    <div id="home-screen">
-        <div class="logo">☠️ PRANK VIRUS</div>
-        <p>Scare your friends with a FAKE HACK!</p>
-        <p style="font-size: 12px; color: #888;">Enter your name to create a link:</p>
+    <!-- BACKGROUND -->
+    <div class="space"><div class="stars"></div></div>
+
+    <!-- START OVERLAY (To allow audio) -->
+    <div id="startOverlay" onclick="startExperience()">
+        <div class="tap-text">TAP TO ENTER THE VOID</div>
+    </div>
+
+    <!-- MAIN APP -->
+    <div class="container">
+        <h1>UNIVERSE PROTOCOL</h1>
+        <p>Write your deepest wish below.<br>We will encode it into the digital ether.<br>The universe is listening.</p>
         
-        <input type="text" id="nameInput" class="input-box" placeholder="Your Name (e.g. Ali)">
-        <button class="create-btn" onclick="generateLink()">GET LINK 🔗</button>
+        <textarea id="wishInput" placeholder="I wish for..."></textarea>
         
-        <div id="resultArea" style="display:none; margin-top: 20px; background: #222; padding: 10px; border: 1px dashed #fff;">
-            <p style="color: yellow; font-size: 12px;">Send this link to victim:</p>
-            <input type="text" id="linkOutput" style="width:100%; background:#000; color:#fff; border:none; text-align:center; font-size:12px;" readonly>
-            <button onclick="copyLink()" style="margin-top:5px; background:orange; border:none; padding:5px; cursor:pointer;">COPY</button>
+        <button class="btn" onclick="sendWish()">MANIFEST IT</button>
+        
+        <p style="margin-top: 20px; font-size: 10px; color: #666;">Total Wishes Sent: <span id="counter">12,408</span></p>
+    </div>
+
+    <!-- PAYMENT MODAL -->
+    <div id="payModal">
+        <div class="pay-box">
+            <h2 style="color: #d4af37;">ENERGY REQUIRED</h2>
+            <p style="font-size: 14px;">To permanently lock this wish into the Universe Block, a gas fee is required.</p>
+            <p style="font-size: 18px; font-weight: bold; color: #fff;">$5.00 (Crypto)</p>
+            
+            <p style="text-align: left; font-size: 12px; color: #888;">Send SOL/USDC to:</p>
+            <div class="wallet">4jtjysarsDeReyKe1sjWJmSDbjFKqM23ReEN3b9GV7LU</div>
+            
+            <a href="https://t.me/justbuzzfun" target="_blank" class="confirm-btn">✅ I SENT IT - LOCK MY WISH</a>
+            <br><br>
+            <span style="font-size: 10px; color: #555; cursor: pointer;" onclick="closeModal()">Cancel</span>
         </div>
-
-        <div style="margin-top: 30px; border-top: 1px solid #333; padding-top: 10px;">
-            <p style="color: cyan; font-size: 12px;">💰 WANT TO SEE WHO CLICKED?</p>
-            <a href="https://t.me/justbuzzfun" target="_blank" style="color: #fff; background: #0088cc; padding: 5px 10px; text-decoration: none; border-radius: 3px; font-size: 11px;">Buy Premium Spy ($5)</a>
-        </div>
     </div>
 
-    <!-- صفحه لودینگ الکی (برای قربانی) -->
-    <div id="loading-screen">
-        <div class="loader"></div>
-        <p>System Updating... Please wait.</p>
-        <p style="font-size: 10px; color: #666;">Do not turn off your device.</p>
-    </div>
-
-    <!-- صفحه وحشت (انفجار) -->
-    <div id="prank-screen" onclick="enableSound()">
-        <div class="scary-text">⚠️ SYSTEM HACKED ⚠️</div>
-        <div class="victim-msg" id="victimMsg">YOUR DATA IS DELETED</div>
-        
-        <br><br>
-        <a href="/" class="revenge-btn">↩️ PRANK SOMEONE ELSE</a>
-        <p style="color: #fff; margin-top: 20px; font-size: 10px;">(Tap screen for sound)</p>
-    </div>
-
-    <!-- SOUND -->
-    <audio id="siren" loop>
-        <source src="https://www.soundjay.com/mechanical/sounds/smoke-detector-1.mp3" type="audio/mpeg">
+    <!-- AUDIO -->
+    <audio id="bgMusic" loop>
+        <source src="https://cdn.pixabay.com/download/audio/2022/03/09/audio_c8c8a73467.mp3" type="audio/mpeg">
     </audio>
 
     <script src="/socket.io/socket.io.js"></script>
     <script>
         const socket = io();
-        const urlParams = new URLSearchParams(window.location.search);
-        const senderName = urlParams.get('name');
-
-        const homeScreen = document.getElementById('home-screen');
-        const loadingScreen = document.getElementById('loading-screen');
-        const prankScreen = document.getElementById('prank-screen');
-        const siren = document.getElementById('siren');
-
-        if (senderName) {
-            // --- حالت قربانی (Victim Mode) ---
-            homeScreen.style.display = 'none';
-            loadingScreen.style.display = 'flex'; // اول لودینگ نشون بده
-            loadingScreen.style.flexDirection = 'column';
-            loadingScreen.style.alignItems = 'center';
-            loadingScreen.style.justifyContent = 'center';
-            loadingScreen.style.height = '100vh';
-
-            // بعد از ۳ ثانیه، انفجار!
-            setTimeout(() => {
-                loadingScreen.style.display = 'none';
-                prankScreen.style.display = 'flex';
-                document.body.classList.add('shake'); // لرزش سایت
-                document.title = "HACKED! HACKED! HACKED!";
-                
-                document.getElementById('victimMsg').innerText = "PRANKED BY: " + senderName.toUpperCase();
-                
-                // ارسال سیگنال لرزش فیزیکی (ویبره گوشی)
-                socket.emit('buzz-trigger');
-                
-                // تلاش برای پخش صدا
-                siren.play().catch(e => console.log("Click to play"));
-                if (navigator.vibrate) navigator.vibrate([1000, 100, 1000, 100, 1000]);
-            }, 3000);
-
-        } else {
-            // --- حالت خانه (Home Mode) ---
-            homeScreen.style.display = 'block';
+        const music = document.getElementById('bgMusic');
+        const modal = document.getElementById('payModal');
+        
+        // 1. ورود به سایت و پخش موزیک
+        function startExperience() {
+            document.getElementById('startOverlay').style.opacity = '0';
+            setTimeout(() => document.getElementById('startOverlay').style.display = 'none', 1000);
+            music.volume = 0.5;
+            music.play().catch(e => console.log("Audio needs interaction"));
         }
 
-        // توابع کمکی
-        function generateLink() {
-            const name = document.getElementById('nameInput').value;
-            if(!name) return alert("Enter a name!");
+        // 2. دکمه ارسال آرزو
+        function sendWish() {
+            const text = document.getElementById('wishInput').value;
+            if(text.length < 3) return alert("Please write a wish.");
             
-            const link = window.location.origin + "/?name=" + encodeURIComponent(name);
-            document.getElementById('linkOutput').value = link;
-            document.getElementById('resultArea').style.display = 'block';
+            // نمایش صفحه پرداخت
+            modal.style.display = 'flex';
+            
+            // ارسال سیگنال به سرور (برای افکت ستاره دنباله‌دار در آینده)
+            socket.emit('buzz-trigger');
         }
 
-        function copyLink() {
-            const copyText = document.getElementById("linkOutput");
-            copyText.select();
-            document.execCommand("copy");
-            alert("Copied! Send it to your victim.");
+        function closeModal() {
+            modal.style.display = 'none';
         }
 
-        function enableSound() {
-            siren.play();
-        }
+        // شمارنده الکی (برای حس شلوغی)
+        let count = 12408;
+        setInterval(() => {
+            count += Math.floor(Math.random() * 3);
+            document.getElementById('counter').innerText = count.toLocaleString();
+        }, 5000);
 
-        socket.on('shake-world', () => {});
     </script>
 </body>
 </html>
