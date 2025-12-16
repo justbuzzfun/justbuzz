@@ -3,223 +3,229 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MULTI-COIN SNIPER RADAR</title>
-    <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <title>WHALE RADAR | SPOT HUNTER</title>
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
     <style>
-        body { background-color: #050505; color: #ccc; font-family: 'Share Tech Mono', monospace; margin: 0; padding: 20px; overflow-x: hidden; }
+        body { background-color: #0b0e11; color: #e1e1e1; font-family: 'Rajdhani', sans-serif; margin: 0; padding: 20px; }
         
         /* HEADER */
-        .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #333; padding-bottom: 15px; margin-bottom: 20px; position: sticky; top: 0; background: #050505; z-index: 100; }
-        .logo { font-size: 24px; color: #00bcd4; font-weight: bold; letter-spacing: 2px; }
-        .status { font-size: 12px; color: #666; }
-        
-        /* GRID LAYOUT */
-        .radar-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 15px; }
-        
-        /* COIN CARD */
-        .card { background: #111; border: 1px solid #333; border-radius: 8px; padding: 15px; position: relative; transition: all 0.3s; display: flex; flex-direction: column; justify-content: space-between; }
-        .card-header { display: flex; justify-content: space-between; margin-bottom: 10px; }
-        .symbol { font-size: 18px; font-weight: bold; color: #fff; }
-        .price { font-size: 16px; color: #ddd; }
-        
-        .indicators { display: flex; justify-content: space-between; font-size: 12px; color: #888; margin-bottom: 10px; }
-        .val-high { color: #ff0055; } /* RSI High */
-        .val-low { color: #00ff41; } /* RSI Low */
-        
-        /* SIGNAL STATUS */
-        .signal-bar { text-align: center; padding: 8px; border-radius: 4px; font-weight: bold; font-size: 14px; background: #222; color: #555; transition: 0.3s; }
-        
-        /* ACTIVE SIGNALS */
-        .card.buy-active { border: 2px solid #00ff41; box-shadow: 0 0 20px rgba(0, 255, 65, 0.2); order: -1; }
-        .card.buy-active .signal-bar { background: #00ff41; color: #000; animation: pulse-green 1s infinite; }
-        
-        .card.sell-active { border: 2px solid #ff0055; box-shadow: 0 0 20px rgba(255, 0, 85, 0.2); order: -1; }
-        .card.sell-active .signal-bar { background: #ff0055; color: #fff; animation: pulse-red 1s infinite; }
+        .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #2b3139; padding-bottom: 15px; margin-bottom: 20px; position: sticky; top: 0; background: #0b0e11; z-index: 100; }
+        .logo { font-size: 28px; color: #f0b90b; font-weight: bold; text-transform: uppercase; letter-spacing: 2px; }
+        .stats { font-size: 14px; color: #848e9c; }
 
-        /* LOG PANEL (SIDEBAR) */
-        #log-panel { position: fixed; bottom: 20px; right: 20px; width: 300px; height: 200px; background: rgba(0,0,0,0.9); border: 1px solid #444; padding: 10px; overflow-y: auto; font-size: 11px; z-index: 99; border-radius: 5px; display: none; }
-        .log-entry { margin-bottom: 5px; border-bottom: 1px dashed #333; padding-bottom: 2px; }
-        .log-buy { color: #00ff41; }
-        .log-sell { color: #ff0055; }
+        /* TABLE */
+        .table-container { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; min-width: 600px; }
+        th { text-align: left; padding: 12px; color: #848e9c; border-bottom: 1px solid #2b3139; font-size: 14px; cursor: pointer; }
+        td { padding: 12px; border-bottom: 1px solid #2b3139; font-size: 16px; font-weight: bold; }
+        
+        /* ROWS & COLORS */
+        tr:hover { background-color: #1e2329; }
+        .coin-name { display: flex; align-items: center; gap: 10px; }
+        .coin-icon { width: 24px; height: 24px; border-radius: 50%; background: #333; }
+        
+        .score-box { padding: 5px 10px; border-radius: 4px; color: #000; font-weight: bold; text-align: center; width: 50px; display: inline-block; }
+        
+        .bullish { color: #0ecb81; }
+        .bearish { color: #f6465d; }
+        
+        /* WHALE ALERT */
+        .whale-alert { background: rgba(14, 203, 129, 0.2); border: 1px solid #0ecb81; color: #0ecb81; padding: 2px 6px; font-size: 10px; border-radius: 3px; margin-left: 5px; animation: pulse 1s infinite; }
 
-        @keyframes pulse-green { 0% { opacity: 1; } 50% { opacity: 0.6; } 100% { opacity: 1; } }
-        @keyframes pulse-red { 0% { opacity: 1; } 50% { opacity: 0.6; } 100% { opacity: 1; } }
+        /* LOADING */
+        #loader { text-align: center; margin-top: 50px; color: #f0b90b; font-size: 20px; }
+
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
     </style>
 </head>
 <body>
 
     <div class="header">
         <div>
-            <div class="logo">🦅 HUNTER RADAR v2</div>
-            <div class="status">SCANNING <span id="coinCount">0</span> ASSETS | TIMEFRAME: 1m (Scalp)</div>
+            <div class="logo">🐋 WHALE RADAR <span style="font-size:12px; color:#fff; background:#2b3139; padding:2px 5px; border-radius:3px;">4H SPOT</span></div>
+            <div class="stats">Scanning <span id="totalCoins">0</span> Assets | Seeking Trend & Volume</div>
         </div>
-        <button onclick="toggleSound()" style="background:#333; color:#fff; border:none; padding:10px; cursor:pointer;">🔊 SOUND: ON</button>
+        <button onclick="fetchData()" style="background:#f0b90b; border:none; padding:10px 20px; font-weight:bold; cursor:pointer; border-radius:4px;">REFRESH SCAN</button>
     </div>
 
-    <div id="radarGrid" class="radar-grid">
-        <!-- Cards will be injected here -->
-    </div>
+    <div id="loader">INITIALIZING SATELLITE CONNECTION... PLEASE WAIT...</div>
 
-    <div id="log-panel" style="display:block;">
-        <div style="font-weight:bold; color:#fff; border-bottom:1px solid #555; margin-bottom:5px;">🚨 SIGNAL LOGS</div>
-        <div id="logsContent"></div>
+    <div class="table-container">
+        <table id="dataTable" style="display:none;">
+            <thead>
+                <tr>
+                    <th onclick="sortTable(0)">ASSET</th>
+                    <th onclick="sortTable(1)">PRICE</th>
+                    <th onclick="sortTable(2)">24h CHG</th>
+                    <th onclick="sortTable(3)">SCORE (0-100)</th>
+                    <th onclick="sortTable(4)">STATUS</th>
+                    <th>SIGNALS</th>
+                </tr>
+            </thead>
+            <tbody id="tableBody">
+                <!-- Rows injected here -->
+            </tbody>
+        </table>
     </div>
-
-    <!-- AUDIO -->
-    <audio id="alertSound" src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3"></audio>
 
     <script>
-        // --- 1. CONFIGURATION ---
-        // لیست ارزهایی که میخوای اسکن کنی (با حروف کوچک)
-        // نکته: GME روی سولانا ممکنه تو بایننس نباشه، اینجا لیست بایننس رو میذاریم
-        const symbols = [
-            'btcusdt', 'ethusdt', 'solusdt', 'bnbusdt', 'xrpusdt', 
-            'dogeusdt', 'pepeusdt', 'shibusdt', 'filusdt', // درخواستی
-            'actusdt', 'pnutusdt', // درخواستی (اگه تو بایننس باشن کار میکنه)
-            'linkusdt', 'adausdt', 'avaxusdt', 'maticusdt', 
-            'dotusdt', 'ltcusdt', 'nearusdt', 'ftmusdt'
+        // لیست ارزهای مهم + درخواستی های تو
+        // (PNUT و ACT اگر در بایننس نباشند دیتا نمیاد، ولی من اضافه کردم)
+        const assets = [
+            'BTC', 'ETH', 'BNB', 'SOL', 'XRP', 'ADA', 'AVAX', 'DOGE', 'SHIB', 'DOT',
+            'LTC', 'LINK', 'MATIC', 'UNI', 'ATOM', 'ETC', 'XLM', 'FIL', 'NEAR', 'ALGO',
+            'APE', 'SAND', 'MANA', 'AXS', 'THETA', 'EOS', 'AAVE', 'FTM', 'GRT', 'KLAY',
+            'NEO', 'MKR', 'SNX', 'RUNE', 'CAKE', 'CHZ', 'COMP', 'BAT', 'ZEC', 'ENJ',
+            'DASH', 'STX', 'MINA', 'CRV', 'IOTA', 'XMR', 'LDO', 'QNT', 'AR', 'GMT',
+            'KAVA', 'TWT', 'ONE', 'ZIL', 'GALA', 'CELO', 'FLOW', 'KSM', 'CVX', 'DYDX',
+            '1INCH', 'HOT', 'COMP', 'YFI', 'BAL', 'SUSHI', 'RSR', 'IOST', 'OMG', 'ANKR',
+            'ACT', 'PNUT', 'PEPE', 'FLOKI', 'BONK', 'WIF', 'RENDER', 'FET', 'AGIX', 'OCEAN',
+            'ARB', 'OP', 'SUI', 'SEI', 'TIA', 'APT', 'INJ', 'IMX', 'LUNC', 'CFX'
         ];
 
-        document.getElementById('coinCount').innerText = symbols.length;
-        let soundEnabled = true;
+        document.getElementById('totalCoins').innerText = assets.length;
+        const tbody = document.getElementById('tableBody');
+        const loader = document.getElementById('loader');
+        const table = document.getElementById('dataTable');
 
-        // حافظه برای ذخیره کندل‌های هر ارز
-        // structure: { 'btcusdt': [close1, close2, ...], ... }
-        let coinData = {};
-        
-        // ساخت کارت‌ها در صفحه
-        const grid = document.getElementById('radarGrid');
-        symbols.forEach(sym => {
-            coinData[sym] = []; // آرایه خالی برای دیتا
+        // تابع اصلی برای گرفتن دیتا
+        async function fetchData() {
+            loader.style.display = 'block';
+            table.style.display = 'none';
+            tbody.innerHTML = '';
             
-            const card = document.createElement('div');
-            card.className = 'card';
-            card.id = `card-${sym}`;
-            card.innerHTML = `
-                <div class="card-header">
-                    <span class="symbol">${sym.toUpperCase().replace('USDT','')}</span>
-                    <span class="price" id="price-${sym}">Loading...</span>
-                </div>
-                <div class="indicators">
-                    <span>RSI: <b id="rsi-${sym}">--</b></span>
-                    <span>EMA Dist: <b id="ema-${sym}">--</b>%</span>
-                </div>
-                <div class="signal-bar" id="sig-${sym}">WAITING DATA...</div>
-            `;
-            grid.appendChild(card);
-        });
+            let processed = 0;
+            let results = [];
 
-        // --- 2. WEBSOCKET CONNECTION ---
-        // ساخت آدرس استریم ترکیبی (یک کانکشن برای همه ارزها - بهینه)
-        const streams = symbols.map(s => `${s}@kline_1m`).join('/');
-        const ws = new WebSocket(`wss://stream.binance.com:9443/stream?streams=${streams}`);
+            // ما باید برای هر ارز کندل‌های 4 ساعته رو بگیریم
+            // برای سرعت، این کار رو موازی انجام میدیم ولی با محدودیت که بن نشیم
+            const batchSize = 5; 
+            
+            for (let i = 0; i < assets.length; i += batchSize) {
+                const batch = assets.slice(i, i + batchSize);
+                const promises = batch.map(symbol => analyzeCoin(symbol));
+                const batchResults = await Promise.all(promises);
+                results = [...results, ...batchResults.filter(r => r !== null)];
+                
+                processed += batch.length;
+                loader.innerText = `SCANNING MARKETS... ${Math.round((processed / assets.length) * 100)}%`;
+            }
 
-        ws.onopen = () => console.log("Connected to Binance Radar");
-        
-        ws.onmessage = (event) => {
-            const data = JSON.parse(event.data);
-            const symbol = data.data.s.toLowerCase(); // e.g. 'btcusdt'
-            const kline = data.data.k;
-            const closePrice = parseFloat(kline.c);
+            // مرتب سازی بر اساس امتیاز (قوی ترین ها اول)
+            results.sort((a, b) => b.score - a.score);
 
-            // آپدیت قیمت لحظه‌ای
-            document.getElementById(`price-${symbol}`).innerText = closePrice;
+            // نمایش در جدول
+            results.forEach(coin => {
+                const row = document.createElement('tr');
+                
+                // رنگ امتیاز
+                let scoreColor = '#848e9c'; // خاکستری
+                let bgScore = '#2b3139';
+                if(coin.score >= 80) { scoreColor = '#000'; bgScore = '#0ecb81'; } // سبز قوی
+                else if(coin.score >= 60) { scoreColor = '#0ecb81'; bgScore = 'rgba(14, 203, 129, 0.1)'; } // سبز
+                else if(coin.score <= 20) { scoreColor = '#000'; bgScore = '#f6465d'; } // قرمز قوی
+                else if(coin.score <= 40) { scoreColor = '#f6465d'; bgScore = 'rgba(246, 70, 93, 0.1)'; } // قرمز
 
-            // فقط وقتی کندل بسته میشه محاسبات سنگین رو انجام بده
-            if (kline.x) {
-                updateStrategy(symbol, closePrice);
-            } else {
-                // برای اولین بار که دیتا میاد، آرایه رو پر کنیم تا منتظر بسته شدن نمونیم
-                if (coinData[symbol].length === 0) {
-                     // اینجا یه کلک میزنیم: چون دیتای هیستوری نداریم، صبر میکنیم.
-                     // برای نسخه حرفه‌ای باید Fetch History بزنیم که پایین نوشتم.
+                // Whale Alert
+                let whaleBadge = coin.whale ? '<span class="whale-alert">WHALE DETECTED</span>' : '';
+
+                row.innerHTML = `
+                    <td>
+                        <div class="coin-name">
+                            <img src="https://assets.coincap.io/assets/icons/${coin.symbol.toLowerCase()}@2x.png" class="coin-icon" onerror="this.style.display='none'">
+                            ${coin.symbol} <span style="font-size:10px; color:#666;">USDT</span>
+                        </div>
+                    </td>
+                    <td>$${parseFloat(coin.price).toFixed(coin.price < 1 ? 4 : 2)}</td>
+                    <td class="${coin.change >= 0 ? 'bullish' : 'bearish'}">${coin.change}%</td>
+                    <td><div class="score-box" style="background:${bgScore}; color:${scoreColor}">${coin.score}</div></td>
+                    <td style="color:${scoreColor}">${coin.status}</td>
+                    <td>${whaleBadge}</td>
+                `;
+                tbody.appendChild(row);
+            });
+
+            loader.style.display = 'none';
+            table.style.display = 'table';
+        }
+
+        // تحلیل هر ارز
+        async function analyzeCoin(symbol) {
+            try {
+                // دریافت ۱۰۰ کندل ۴ ساعته
+                const res = await fetch(`https://api.binance.com/api/v3/klines?symbol=${symbol}USDT&interval=4h&limit=100`);
+                const data = await res.json();
+                
+                if(data.code) return null; // اگر ارز پیدا نشد
+
+                // پردازش کندل ها
+                const closes = data.map(d => parseFloat(d[4]));
+                const volumes = data.map(d => parseFloat(d[5]));
+                const currentPrice = closes[closes.length - 1];
+                const prevPrice = closes[closes.length - 2]; // قیمت بسته شده کندل قبلی (برای درصد تغییر)
+                // محاسبه درصد تغییر ۲۴ ساعته (تقریبی با ۶ کندل ۴ ساعته)
+                const open24h = parseFloat(data[data.length - 6][1]); 
+                const change24h = ((currentPrice - open24h) / open24h) * 100;
+
+                // --- محاسبات اندیکاتورها ---
+                const rsi = calculateRSI(closes, 14);
+                const ema50 = calculateEMA(closes, 50);
+                const avgVol = calculateSMA(volumes, 20); // میانگین حجم ۲۰ کندل اخیر
+                const currentVol = volumes[volumes.length - 1];
+
+                // --- سیستم امتیازدهی (0 تا 100) ---
+                let score = 50;
+                let status = "NEUTRAL";
+
+                // 1. روند (Trend) - 30 امتیاز
+                if (currentPrice > ema50) {
+                    score += 20; // بالای میانگین (صعودی)
+                    // اگر کندل قبلی هم صعودی بود
+                    if (currentPrice > prevPrice) score += 10;
+                } else {
+                    score -= 20; // روند نزولی
                 }
-            }
-        };
 
-        // --- 3. FETCH HISTORY (مهم: پر کردن داده‌های اولیه) ---
-        // چون وب‌سوکت فقط دیتای جدید میده، ما ۵۰ تا کندل قبلی رو میخوایم برای RSI
-        async function initHistory() {
-            for (const sym of symbols) {
-                try {
-                    // دریافت ۱۰۰ کندل آخر
-                    const res = await fetch(`https://api.binance.com/api/v3/klines?symbol=${sym.toUpperCase()}&interval=1m&limit=60`);
-                    const data = await res.json();
-                    const closes = data.map(d => parseFloat(d[4])); // قیمت بسته شدن
-                    coinData[sym] = closes;
-                    
-                    // محاسبه اولیه
-                    const lastPrice = closes[closes.length - 1];
-                    runAnalysis(sym, lastPrice);
-                } catch (e) {
-                    console.log(`Error loading history for ${sym}. Need VPN?`);
+                // 2. مومنتوم (RSI) - 30 امتیاز
+                if (rsi > 50 && rsi < 70) score += 15; // منطقه امن صعود
+                if (rsi >= 70) score -= 10; // اشباع خرید (خطر اصلاح)
+                if (rsi < 30) score += 10; // اشباع فروش (شانس برگشت به بالا)
+                if (rsi > 30 && rsi < 50) score -= 10; // منطقه ضعف
+
+                // 3. حجم (Volume) - 20 امتیاز (نهنگ یاب)
+                let isWhale = false;
+                if (currentVol > avgVol * 2) {
+                    score += 20; // حجم دو برابر میانگین!
+                    isWhale = true;
+                } else if (currentVol > avgVol) {
+                    score += 10;
                 }
-            }
-        }
-        initHistory(); // اجرا در شروع
 
-        // --- 4. STRATEGY UPDATE ---
-        function updateStrategy(symbol, price) {
-            let history = coinData[symbol];
-            history.push(price);
-            if (history.length > 100) history.shift(); // فقط ۱۰۰ تا نگه دار
-            
-            runAnalysis(symbol, price);
-        }
+                // تعیین وضعیت متنی
+                if(score >= 80) status = "STRONG BUY 🚀";
+                else if(score >= 60) status = "BUY";
+                else if(score <= 20) status = "STRONG SELL 🩸";
+                else if(score <= 40) status = "SELL";
 
-        function runAnalysis(symbol, currentPrice) {
-            const history = coinData[symbol];
-            if (history.length < 50) return; // دیتای کافی نیست
+                // نرمال سازی امتیاز بین 0 تا 100
+                if(score > 100) score = 100;
+                if(score < 0) score = 0;
 
-            // 1. محاسبه RSI (14)
-            const rsi = calculateRSI(history, 14);
-            
-            // 2. محاسبه EMA (50) - میانگین متحرک
-            const ema = calculateEMA(history, 50);
+                return {
+                    symbol,
+                    price: currentPrice,
+                    change: change24h.toFixed(2),
+                    score,
+                    status,
+                    whale: isWhale
+                };
 
-            // آپدیت UI
-            const rsiEl = document.getElementById(`rsi-${symbol}`);
-            const emaEl = document.getElementById(`ema-${symbol}`);
-            const sigEl = document.getElementById(`sig-${symbol}`);
-            const card = document.getElementById(`card-${symbol}`);
-
-            rsiEl.innerText = rsi.toFixed(1);
-            rsiEl.className = rsi > 70 ? 'val-high' : (rsi < 30 ? 'val-low' : '');
-            
-            const dist = ((currentPrice - ema) / ema) * 100;
-            emaEl.innerText = dist.toFixed(2);
-
-            // --- 5. SIGNAL LOGIC ---
-            // ریست کردن کارت
-            card.classList.remove('buy-active', 'sell-active');
-            sigEl.innerText = "MONITORING";
-
-            // سیگنال خرید: روند صعودی (قیمت بالای EMA) + اصلاح قیمت (RSI پایین)
-            if (currentPrice > ema && rsi < 35) {
-                triggerSignal(symbol, 'BUY', currentPrice);
-                card.classList.add('buy-active'); // میاد بالا
-                sigEl.innerText = "🔵 BUY SIGNAL";
-            }
-            // سیگنال فروش: روند نزولی (قیمت زیر EMA) + جهش قیمت (RSI بالا)
-            else if (currentPrice < ema && rsi > 65) {
-                triggerSignal(symbol, 'SELL', currentPrice);
-                card.classList.add('sell-active'); // میاد بالا
-                sigEl.innerText = "🔴 SELL SIGNAL";
+            } catch (e) {
+                return null;
             }
         }
 
-        // --- 6. HELPERS ---
-        function triggerSignal(symbol, type, price) {
-            if(soundEnabled) document.getElementById('alertSound').play().catch(()=>{});
-            
-            const logBox = document.getElementById('logsContent');
-            const time = new Date().toLocaleTimeString();
-            const colorClass = type === 'BUY' ? 'log-buy' : 'log-sell';
-            
-            const entry = `<div class="log-entry ${colorClass}">[${time}] ${type} ${symbol.toUpperCase()} @ ${price}</div>`;
-            logBox.innerHTML = entry + logBox.innerHTML;
-        }
-
+        // --- توابع ریاضی ---
         function calculateRSI(prices, period) {
             let gains = 0, losses = 0;
             for (let i = prices.length - period; i < prices.length; i++) {
@@ -240,10 +246,18 @@
             return ema;
         }
 
-        function toggleSound() {
-            soundEnabled = !soundEnabled;
-            alert("Sound is now: " + (soundEnabled ? "ON" : "OFF"));
+        function calculateSMA(data, period) {
+            if(data.length < period) return 0;
+            const slice = data.slice(data.length - period);
+            const sum = slice.reduce((a, b) => a + b, 0);
+            return sum / period;
         }
+
+        // شروع خودکار
+        fetchData();
+        // رفرش خودکار هر ۵ دقیقه (چون تایم فریم ۴ ساعته است، نیاز به رفرش ثانیه‌ای نیست)
+        setInterval(fetchData, 300000); 
+
     </script>
 </body>
 </html>
