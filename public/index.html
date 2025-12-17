@@ -3,56 +3,56 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MATRIX FUTURES SCANNER</title>
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+    <title>TREND HUNTER V3 (FILTERED)</title>
+    <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;700&display=swap" rel="stylesheet">
     <style>
-        body { background-color: #000; color: #0f0; font-family: 'Orbitron', sans-serif; margin: 0; padding: 20px; overflow-x: hidden; }
+        body { background-color: #000; color: #fff; font-family: 'Chakra Petch', sans-serif; margin: 0; padding: 20px; }
         
         /* HEADER */
-        .header { border-bottom: 2px solid #0f0; padding-bottom: 15px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; background: #000; z-index: 100; }
-        .logo { font-size: 24px; font-weight: bold; letter-spacing: 2px; text-shadow: 0 0 10px #0f0; }
-        .status { font-size: 12px; color: #666; }
+        .header { border-bottom: 2px solid #333; padding-bottom: 15px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; background: #000; z-index: 100; }
+        .logo { font-size: 22px; font-weight: bold; color: gold; letter-spacing: 2px; }
+        .status { font-size: 11px; color: #666; }
 
         /* GRID */
-        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 15px; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 15px; }
 
         /* CARD */
-        .card { background: #050505; border: 1px solid #333; padding: 15px; border-radius: 5px; position: relative; transition: 0.3s; }
-        .card-header { display: flex; justify-content: space-between; font-size: 18px; font-weight: bold; margin-bottom: 10px; color: #fff; }
+        .card { background: #080808; border: 1px solid #222; padding: 15px; border-radius: 6px; position: relative; transition: 0.3s; opacity: 0.5; filter: grayscale(1); }
+        
+        /* ACTIVE CARDS (SIGNAL) */
+        .card.active { opacity: 1; filter: grayscale(0); border: 2px solid #fff; order: -1; transform: scale(1.02); }
+        .card.long { border-color: #00ff41; box-shadow: 0 0 20px rgba(0, 255, 65, 0.2); }
+        .card.short { border-color: #ff0055; box-shadow: 0 0 20px rgba(255, 0, 85, 0.2); }
+
+        .card-header { display: flex; justify-content: space-between; font-size: 18px; font-weight: bold; margin-bottom: 10px; }
+        .trend-badge { font-size: 10px; padding: 2px 5px; border-radius: 3px; background: #333; }
         
         .data-row { display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 5px; color: #888; }
         .val { color: #fff; font-weight: bold; }
         
-        /* COLORS & ALERTS */
-        .pump-alert { border: 2px solid #0f0; box-shadow: 0 0 20px rgba(0, 255, 0, 0.3); animation: pulse 1s infinite; order: -1; }
-        .dump-alert { border: 2px solid #f00; box-shadow: 0 0 20px rgba(255, 0, 0, 0.3); animation: pulse 1s infinite; order: -1; }
+        .signal-box { margin-top: 10px; text-align: center; font-weight: bold; padding: 8px; border-radius: 4px; font-size: 14px; background: #111; color: #555; }
         
-        .positive { color: #0f0; }
-        .negative { color: #f00; }
-        .neutral { color: #888; }
+        .card.long .signal-box { background: #00ff41; color: #000; animation: pulse 1s infinite; }
+        .card.short .signal-box { background: #ff0055; color: #fff; animation: pulse 1s infinite; }
 
-        /* PROGRESS BAR (PUMP SCORE) */
-        .score-bar { width: 100%; background: #222; height: 5px; margin-top: 10px; position: relative; }
-        .score-fill { height: 100%; background: #0f0; width: 0%; transition: width 0.5s; box-shadow: 0 0 5px #0f0; }
+        .positive { color: #00ff41; }
+        .negative { color: #ff0055; }
 
-        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.7; } 100% { opacity: 1; } }
-        
-        #loading { text-align: center; margin-top: 50px; color: yellow; }
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.8; } 100% { opacity: 1; } }
+        #loading { text-align: center; margin-top: 50px; color: gold; }
     </style>
 </head>
 <body>
 
     <div class="header">
         <div>
-            <div class="logo">☢️ MATRIX SCANNER</div>
-            <div class="status">MONITORING 100+ FUTURES PAIRS | OI & FUNDING ANALYSIS</div>
+            <div class="logo">🎯 TREND SNIPER</div>
+            <div class="status">AUTO-FILTER: ONLY TRADE WITH TREND</div>
         </div>
-        <div style="text-align: right;">
-            <button onclick="toggleSound()" style="background:#222; color:#fff; border:1px solid #0f0; padding:5px 10px; cursor:pointer;">🔊 SOUND: ON</button>
-        </div>
+        <button onclick="toggleSound()" style="background:#222; color:#fff; border:1px solid gold; padding:5px 10px; cursor:pointer;">🔊 ON</button>
     </div>
 
-    <div id="loading">INITIALIZING NEURAL NETWORK...</div>
+    <div id="loading">INITIALIZING TREND FILTERS...</div>
     <div id="grid" class="grid"></div>
 
     <audio id="alertSound" src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3"></audio>
@@ -63,114 +63,97 @@
         let soundEnabled = true;
         let pairs = [];
 
-        // 1. دریافت لیست ارزهای فیوچرز (Top Volume)
+        // 1. دریافت لیست ارزها
         async function init() {
             try {
-                // دریافت همه جفت‌ارزهای فیوچرز
                 const res = await fetch('https://fapi.binance.com/fapi/v1/ticker/24hr');
                 const data = await res.json();
                 
-                // فیلتر کردن و برداشتن ۱۰۰ تای اول بر اساس حجم
+                // انتخاب ۱۰۰ ارز پرحجم
                 pairs = data
-                    .filter(p => p.symbol.endsWith('USDT') && parseFloat(p.quoteVolume) > 10000000) // حجم بالای ۱۰ میلیون
+                    .filter(p => p.symbol.endsWith('USDT') && parseFloat(p.quoteVolume) > 10000000)
                     .sort((a, b) => parseFloat(b.quoteVolume) - parseFloat(a.quoteVolume))
-                    .slice(0, 120); // ۱۲۰ تای اول
+                    .slice(0, 100);
 
-                // اضافه کردن دستی ارزهای خاص اگر در لیست نبودن
-                const specialCoins = ['PNUTUSDT', 'ACTUSDT', 'FILUSDT', '1000PEPEUSDT']; // 1000PEPE اسم دقیقشه تو فیوچرز
+                // اضافه کردن دستی ارزهای خاص
+                const specialCoins = ['PNUTUSDT', 'ACTUSDT', 'FILUSDT', '1000PEPEUSDT'];
                 specialCoins.forEach(coin => {
-                    if (!pairs.find(p => p.symbol === coin)) {
-                        // اگه نبود، یه آبجکت فیک موقت میسازیم تا بعدا دیتاش آپدیت شه
-                        pairs.push({ symbol: coin }); 
-                    }
+                    if (!pairs.find(p => p.symbol === coin)) pairs.push({ symbol: coin });
                 });
 
                 loading.style.display = 'none';
                 startScanning();
             } catch (e) {
-                loading.innerText = "CONNECTION FAILED. USE VPN.";
+                loading.innerText = "VPN REQUIRED FOR BINANCE DATA";
             }
         }
 
-        // 2. اسکنر اصلی (حلقه تکرار)
+        // 2. اسکن مداوم
         async function startScanning() {
-            // به دلیل محدودیت API، نمیتونیم همه رو یکجا بگیریم. ۵ تا ۵ تا میگیریم.
             for (let i = 0; i < pairs.length; i++) {
                 await analyzePair(pairs[i].symbol);
-                // تاخیر کوچک برای جلوگیری از بن شدن IP
-                await new Promise(r => setTimeout(r, 150)); 
+                await new Promise(r => setTimeout(r, 100)); // تاخیر کم
             }
-            // دوباره از اول
-            setTimeout(startScanning, 5000);
+            setTimeout(startScanning, 3000);
         }
 
-        // 3. تحلیل هر ارز
+        // 3. تحلیل هوشمند (فیلتردار)
         async function analyzePair(symbol) {
             try {
-                // دریافت دیتای زنده: قیمت، فاندینگ، OI
-                // ما از Premium Index برای فاندینگ استفاده میکنیم
-                const [tickerRes, oiRes, fundingRes] = await Promise.all([
+                // دریافت دیتای ۲۴ ساعت (برای تشخیص روند) و دیتای لحظه‌ای
+                const [tickerRes, klineRes, fundingRes] = await Promise.all([
                     fetch(`https://fapi.binance.com/fapi/v1/ticker/24hr?symbol=${symbol}`),
-                    fetch(`https://fapi.binance.com/fapi/v1/openInterest?symbol=${symbol}`),
+                    fetch(`https://fapi.binance.com/fapi/v1/klines?symbol=${symbol}&interval=5m&limit=50`), // کندل ۵ دقیقه‌ای برای سیگنال
                     fetch(`https://fapi.binance.com/fapi/v1/premiumIndex?symbol=${symbol}`)
                 ]);
 
                 const ticker = await tickerRes.json();
-                const oi = await oiRes.json();
+                const kline = await klineRes.json();
                 const funding = await fundingRes.json();
 
-                // محاسبات ماتریس
-                const priceChange = parseFloat(ticker.priceChangePercent);
-                const openInterest = parseFloat(oi.openInterest); // مقدار کل
-                // (در واقعیت باید تغییرات OI رو نسبت به ۱ ساعت پیش بگیریم، ولی اینجا برای سرعت از حجم استفاده میکنیم)
-                const fundingRate = parseFloat(funding.lastFundingRate) * 100; // درصد
-
-                // محاسبه امتیاز انفجار (0 تا 100)
-                let score = 0;
-                let signal = "NEUTRAL";
-                let alertClass = "";
-
-                // A. شرط فاندینگ ریت (سوخت موشک)
-                if (fundingRate < 0) score += 40; // فاندینگ منفی = احتمال شورت اسکوییز
-                else if (fundingRate > 0.05) score -= 20; // خیلی مثبت = خطر دامپ
-
-                // B. شرط تغییر قیمت (انباشت)
-                if (Math.abs(priceChange) < 3) score += 20; // قیمت رنج میزنه (فنر فشرده)
+                // محاسبات
+                const change24h = parseFloat(ticker.priceChangePercent);
+                const currentPrice = parseFloat(ticker.lastPrice);
+                const fundingRate = parseFloat(funding.lastFundingRate) * 100;
                 
-                // C. شرط Open Interest (ورود پول)
-                // (اینجا یه منطق ساده میذاریم: اگه حجم نسبت به قیمت خیلی بالاست)
-                // در نسخه سروری باید دیتای تاریخی داشته باشیم.
+                // محاسبه RSI دستی روی ۵ دقیقه
+                const closes = kline.map(k => parseFloat(k[4]));
+                const rsi = calculateRSI(closes, 14);
 
-                // نتیجه نهایی
-                if (score > 50) {
-                    signal = "⚠️ PREPARING";
-                    alertClass = "";
-                }
+                // --- 🧠 مغز متفکر (فیلتر روند) ---
+                let signal = "WAIT";
+                let cardClass = "";
                 
-                // سیگنال طلایی: فاندینگ منفی + قیمت رنج = انفجار
-                if (fundingRate < 0 && Math.abs(priceChange) < 5) {
-                    score = 95;
-                    signal = "🚀 EXPLOSION IMMINENT";
-                    alertClass = "pump-alert";
-                    playSound();
+                // شرط ۱: تعیین جهت مجاز
+                const trend = change24h > 0 ? 'UP' : 'DOWN';
+
+                // شرط ۲: سیگنال دهی فقط در جهت روند
+                if (trend === 'UP') {
+                    // فقط دنبال خرید باش
+                    // اگر قیمت اصلاح کرده (RSI پایین) و فاندینگ اوکیه
+                    if (rsi < 35 && fundingRate < 0.03) {
+                        signal = "🟢 BUY DIP";
+                        cardClass = "active long";
+                        if(rsi < 30) playSound(); // فقط اگه خیلی خوب بود بوق بزن
+                    }
+                } 
+                else if (trend === 'DOWN') {
+                    // فقط دنبال فروش باش
+                    // اگر قیمت رفته بالا (RSI بالا)
+                    if (rsi > 65) {
+                        signal = "🔴 SELL RALLY";
+                        cardClass = "active short";
+                        if(rsi > 70) playSound();
+                    }
                 }
 
-                // سیگنال ریزش: فاندینگ خیلی مثبت + قیمت بالا رفته
-                if (fundingRate > 0.1 && priceChange > 10) {
-                    score = 10; // قرمز
-                    signal = "🩸 DUMP WARNING";
-                    alertClass = "dump-alert";
-                }
+                updateCard(symbol, currentPrice, change24h, rsi, fundingRate, signal, cardClass, trend);
 
-                updateCard(symbol, ticker.lastPrice, priceChange, fundingRate, openInterest, score, signal, alertClass);
-
-            } catch (e) {
-                // console.log(e);
-            }
+            } catch (e) {}
         }
 
-        // 4. نمایش کارت
-        function updateCard(symbol, price, change, funding, oi, score, signal, alertClass) {
+        // 4. نمایش
+        function updateCard(symbol, price, change, rsi, funding, signal, cardClass, trend) {
             let card = document.getElementById(symbol);
             if (!card) {
                 card = document.createElement('div');
@@ -178,11 +161,11 @@
                 grid.appendChild(card);
             }
 
-            // رنگ بندی
             const changeColor = change >= 0 ? 'positive' : 'negative';
-            const fundingColor = funding < 0 ? 'positive' : (funding > 0.01 ? 'negative' : 'neutral');
-
-            card.className = `card ${alertClass}`;
+            
+            // اگه سیگنال نیست، کارت رو کمرنگ کن
+            card.className = `card ${cardClass}`;
+            
             card.innerHTML = `
                 <div class="card-header">
                     <span>${symbol.replace('USDT','')}</span>
@@ -190,36 +173,36 @@
                 </div>
                 
                 <div class="data-row">
-                    <span>PRICE:</span> <span class="val">$${parseFloat(price)}</span>
+                    <span>TREND (Daily):</span> 
+                    <span class="trend-badge" style="color:${trend==='UP'?'#0f0':'#f00'}">${trend}</span>
                 </div>
                 <div class="data-row">
-                    <span>FUNDING:</span> <span class="val ${fundingColor}">${funding.toFixed(4)}%</span>
+                    <span>RSI (5m):</span> <span class="val" style="color:${rsi>70?'red':(rsi<30?'lime':'#888')}">${rsi.toFixed(1)}</span>
                 </div>
                 <div class="data-row">
-                    <span>OI (Contracts):</span> <span class="val">${(oi/1000).toFixed(1)}K</span>
+                    <span>Funding:</span> <span class="val">${funding.toFixed(4)}%</span>
                 </div>
 
-                <div style="margin-top:10px; font-weight:bold; color:${score > 80 ? '#0f0' : (score < 20 ? '#f00' : '#888')}">
-                    STATUS: ${signal}
-                </div>
-                
-                <div class="score-bar">
-                    <div class="score-fill" style="width: ${score}%; background: ${score > 50 ? '#0f0' : '#f00'}"></div>
-                </div>
+                <div class="signal-box">${signal}</div>
             `;
             
-            // اگه آلارم داره، ببرش اول لیست
-            if (alertClass !== "") {
-                card.style.order = "-1";
-            } else {
-                card.style.order = "0";
-            }
+            // سورت کردن: کارت‌های اکتیو برن بالا
+            card.style.order = cardClass.includes('active') ? "-1" : "0";
         }
 
-        function playSound() {
-            if(soundEnabled) document.getElementById('alertSound').play().catch(()=>{});
+        // توابع کمکی
+        function calculateRSI(prices, period) {
+            let gains = 0, losses = 0;
+            for (let i = prices.length - period; i < prices.length; i++) {
+                const diff = prices[i] - prices[i - 1];
+                if (diff >= 0) gains += diff;
+                else losses -= diff;
+            }
+            const rs = gains / losses;
+            return 100 - (100 / (1 + rs));
         }
-        
+
+        function playSound() { if(soundEnabled) document.getElementById('alertSound').play().catch(()=>{}); }
         function toggleSound() { soundEnabled = !soundEnabled; alert("Sound: " + soundEnabled); }
 
         init();
