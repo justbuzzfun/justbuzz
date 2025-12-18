@@ -1,14 +1,17 @@
 {
-  "name": "justbuzz",
-  "version": "1.0.0",
-  "description": "The viral buzzer app",
+  "name": "titan-sniper",
+  "version": "2.0.0",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
   },
   "dependencies": {
     "express": "^4.18.2",
-    "socket.io": "^4.7.2"
+    "socket.io": "^4.7.2",
+    "@solana/web3.js": "^1.87.6",
+    "@solana/spl-token": "^0.3.9",
+    "bs58": "^5.0.0",
+    "axios": "^1.6.0"
   },
   "engines": {
     "node": "18.x"
