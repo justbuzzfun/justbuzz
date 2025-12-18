@@ -3,25 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>KRONOS STATUS</title>
-    <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <title>KRONOS SYSTEM</title>
     <style>
-        body { background-color: #000; color: #00ff41; font-family: 'Share Tech Mono', monospace; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; text-align: center; }
-        h1 { font-size: 40px; text-shadow: 0 0 20px #00ff41; margin-bottom: 10px; }
-        .pulse { width: 15px; height: 15px; background: #00ff41; border-radius: 50%; display: inline-block; box-shadow: 0 0 20px #00ff41; animation: pulse 2s infinite; }
-        .log { color: #555; font-size: 14px; margin-top: 20px; }
-        @keyframes pulse { 0% { opacity: 1; transform: scale(1); } 50% { opacity: 0.5; transform: scale(1.2); } 100% { opacity: 1; transform: scale(1); } }
+        body { background: #000; color: #00ff41; display: flex; justify-content: center; align-items: center; height: 100vh; font-family: monospace; font-size: 24px; text-align: center; }
+        .blink { animation: blink 1s infinite; }
+        @keyframes blink { 50% { opacity: 0; } }
     </style>
 </head>
 <body>
-    <div class="pulse"></div>
-    <h1>KRONOS IS WATCHING</h1>
-    <p>GOD WALLET TRACKER: <b>ACTIVE</b></p>
-    <p>TARGET: <b>SOLANA BLOCKCHAIN</b></p>
-    
-    <div class="log">
-        REDIRECTING INTEL TO TELEGRAM...<br>
-        DO NOT CLOSE THIS TAB IF RUNNING LOCAL.
+    <div>
+        <p>🦅 KRONOS IS ONLINE</p>
+        <p style="font-size:14px; color:#fff;">Target: Solana Mainnet</p>
+        <p class="blink">● LISTENING...</p>
     </div>
 </body>
 </html>
