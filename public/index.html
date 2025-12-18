@@ -3,48 +3,57 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TITAN SNIPER (HELIUS)</title>
+    <title>TITAN MONITOR</title>
     <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
     <style>
-        body { background-color: #000; color: #fff; font-family: 'Roboto Mono', monospace; padding: 20px; }
+        body { background-color: #000; color: #fff; font-family: 'Roboto Mono', monospace; padding: 20px; text-align: center; }
         
         .header { border-bottom: 2px solid #00ff41; padding-bottom: 15px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; }
         .logo { font-size: 22px; color: #00ff41; font-weight: bold; text-shadow: 0 0 10px #00ff41; }
-        .status-badge { font-size: 12px; color: #888; border: 1px solid #333; padding: 5px 10px; border-radius: 5px; }
-
-        #feed { display: flex; flex-direction: column; gap: 12px; }
         
-        /* CARD STYLES */
-        .card { background: #0a0a0a; border: 1px solid #333; padding: 15px; border-radius: 8px; animation: slideIn 0.3s ease-out; position: relative; }
-        .card.safe { border-left: 5px solid #00ff41; box-shadow: 0 0 20px rgba(0, 255, 65, 0.1); }
-        .card.danger { border-left: 5px solid #ff0055; opacity: 0.7; }
+        /* مانیتور وضعیت */
+        .monitor-box {
+            background: #111; border: 1px dashed #333; padding: 20px; border-radius: 10px; margin-bottom: 20px;
+        }
+        .monitor-status { color: #888; font-size: 12px; margin-top: 10px; }
+        .active-dot { height: 10px; width: 10px; background-color: #333; border-radius: 50%; display: inline-block; margin-right: 5px; }
+        .active-dot.on { background-color: #00ff41; box-shadow: 0 0 10px #00ff41; }
 
+        /* دکمه فعال سازی */
+        .activate-btn {
+            background: #00bcd4; color: #000; border: none; padding: 15px 30px; font-weight: bold; font-size: 16px; border-radius: 50px; cursor: pointer; width: 100%; max-width: 300px; margin-bottom: 20px; animation: pulse 2s infinite;
+        }
+
+        #feed { display: flex; flex-direction: column; gap: 12px; text-align: left; }
+        
+        .card { background: #0a0a0a; border: 1px solid #333; padding: 15px; border-radius: 8px; animation: slideIn 0.3s ease-out; border-left: 5px solid #00ff41; box-shadow: 0 0 20px rgba(0, 255, 65, 0.1); }
+        
         .row { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 13px; }
         .token-addr { color: #00bcd4; font-family: monospace; letter-spacing: 1px; }
+        .badge { padding: 3px 6px; border-radius: 3px; font-size: 10px; color: #000; font-weight: bold; background: #00ff41; }
         
-        /* BADGES */
-        .badge { padding: 3px 6px; border-radius: 3px; font-size: 10px; color: #000; font-weight: bold; }
-        .safe-badge { background: #00ff41; }
-        .danger-badge { background: #ff0055; color: #fff; }
+        .buy-btn { width: 100%; background: #00ff41; color: #000; border: none; padding: 12px; font-weight: bold; cursor: pointer; margin-top: 10px; text-transform: uppercase; border-radius: 4px; font-size: 16px; }
 
-        /* BUTTON */
-        .buy-btn { width: 100%; background: #00ff41; color: #000; border: none; padding: 12px; font-weight: bold; cursor: pointer; margin-top: 10px; text-transform: uppercase; border-radius: 4px; font-size: 16px; transition: 0.2s; }
-        .buy-btn:hover { background: #fff; box-shadow: 0 0 15px #fff; }
-
+        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
         @keyframes slideIn { from { transform: translateY(-10px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-        #loading { text-align: center; color: #444; margin-top: 50px; font-size: 12px; }
     </style>
 </head>
 <body>
 
     <div class="header">
-        <div class="logo">⚡ TITAN SNIPER</div>
-        <div class="status-badge" id="status">CONNECTING TO HELIUS...</div>
+        <div class="logo">⚡ TITAN</div>
+        <div class="active-dot" id="dot"></div>
     </div>
 
-    <div id="feed">
-        <div id="loading">WAITING FOR NEW LIQUIDITY POOLS...</div>
+    <!-- دکمه فعال سازی بیداری -->
+    <button class="activate-btn" onclick="activateMonitoring()">🔔 ACTIVATE MONITORING</button>
+
+    <div class="monitor-box">
+        <div>STATUS: <span id="status" style="color:#00ff41">CONNECTING...</span></div>
+        <div class="monitor-status" id="wakeStatus">Screen Sleep: ENABLED (Click Button to Disable)</div>
     </div>
+
+    <div id="feed"></div>
 
     <audio id="alertSound" src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3"></audio>
 
@@ -53,56 +62,80 @@
         const socket = io();
         const feed = document.getElementById('feed');
         const alertSound = document.getElementById('alertSound');
-        const loading = document.getElementById('loading');
+        let wakeLock = null;
+
+        // --- 1. فعال سازی حالت نگهبانی (بیداری + صدا) ---
+        async function activateMonitoring() {
+            // الف) درخواست نوتیفیکیشن
+            if (Notification.permission !== "granted") {
+                Notification.requestPermission();
+            }
+
+            // ب) پخش صدای خالی (برای باز کردن قفل صدای مرورگر)
+            alertSound.play().then(() => {
+                alertSound.pause();
+                alertSound.currentTime = 0;
+            }).catch(()=>{});
+
+            // ج) روشن نگه داشتن صفحه (Wake Lock)
+            try {
+                wakeLock = await navigator.wakeLock.request('screen');
+                document.getElementById('wakeStatus').innerText = "🚫 SCREEN SLEEP: BLOCKED (Keeping Awake)";
+                document.getElementById('wakeStatus').style.color = "gold";
+                document.querySelector('.activate-btn').style.display = 'none'; // مخفی کردن دکمه
+                alert("Monitoring Active! Do not close this tab.");
+            } catch (err) {
+                document.getElementById('wakeStatus').innerText = "⚠️ Wake Lock Failed. Keep screen on manually.";
+            }
+        }
 
         socket.on('status', (data) => {
             document.getElementById('status').innerText = data.msg;
-            document.getElementById('status').style.borderColor = "#00ff41";
-            document.getElementById('status').style.color = "#00ff41";
+            document.getElementById('dot').classList.add('on');
         });
 
         socket.on('god-signal', (data) => {
-            // حذف پیام انتظار
-            loading.style.display = 'none';
+            // فقط سیگنال‌های امن (سبز) میاد چون سرور فیلتر کرده
+            
+            // 1. پخش صدا
+            alertSound.currentTime = 0;
+            alertSound.play().catch(()=>{});
 
-            const isSafe = data.score === 100;
-            if(isSafe) {
-                alertSound.currentTime = 0;
-                alertSound.play().catch(()=>{});
+            // 2. لرزش گوشی
+            if (navigator.vibrate) navigator.vibrate([500, 200, 500]);
+
+            // 3. ارسال نوتیفیکیشن سیستمی (بالای گوشی)
+            if (Notification.permission === "granted") {
+                new Notification("💎 GEM FOUND!", {
+                    body: "Safe Token Detected. Click to Ape.",
+                    icon: "https://cryptologos.cc/logos/solana-sol-logo.png"
+                });
             }
 
+            // 4. نمایش کارت
             const card = document.createElement('div');
-            card.className = `card ${isSafe ? 'safe' : 'danger'}`;
-            
-            // لینک خرید در Photon (سریعترین پلتفرم)
+            card.className = 'card safe';
             const photonLink = `https://photon-sol.tinyastro.io/en/lp/${data.address}`;
 
             card.innerHTML = `
                 <div class="row">
-                    <span class="token-addr">${data.address.substring(0,6)}...${data.address.substring(data.address.length-4)}</span>
-                    <span style="font-weight:bold; color:${isSafe?'#00ff41':'#ff0055'}">SCORE: ${data.score}</span>
+                    <span class="token-addr">${data.address.substring(0,6)}...</span>
+                    <span class="badge">SCORE: 100</span>
                 </div>
-                
-                <div class="row">
-                    <span>Mint Auth:</span>
-                    <span class="badge ${data.mintAuth.includes('SAFE') ? 'safe-badge' : 'danger-badge'}">${data.mintAuth}</span>
+                <div class="row" style="color:#ccc; font-size:11px;">
+                    Mint: ${data.mintAuth} | LP: Locked
                 </div>
-                <div class="row">
-                    <span>Freeze Auth:</span>
-                    <span class="badge ${data.freezeAuth.includes('SAFE') ? 'safe-badge' : 'danger-badge'}">${data.freezeAuth}</span>
-                </div>
-                <div class="row">
-                    <span>LP Status:</span>
-                    <span style="color:#ccc; font-size:10px;">${data.lpStatus || 'Checking...'}</span>
-                </div>
-                
-                ${isSafe ? `<button class="buy-btn" onclick="window.open('${photonLink}', '_blank')">🚀 APE IN (PHOTON)</button>` : '<div style="text-align:center; color:#ff0055; margin-top:5px; font-weight:bold; font-size:12px;">⚠️ UNSAFE CONTRACT</div>'}
+                <button class="buy-btn" onclick="window.open('${photonLink}', '_blank')">🚀 BUY NOW</button>
             `;
             
             feed.prepend(card);
-            
-            // پاک کردن قدیمی‌ها برای سبکی
-            if(feed.children.length > 20) feed.removeChild(feed.lastChild);
+        });
+
+        // بازگرداندن قفل بیداری اگر صفحه مخفی و دوباره باز شد
+        document.addEventListener('visibilitychange', async () => {
+            if (wakeLock !== null && document.visibilityState === 'visible') {
+                wakeLock = await navigator.wakeLock.request('screen');
+            }
         });
     </script>
 </body>
