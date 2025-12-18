@@ -1,6 +1,6 @@
 {
-  "name": "titan-telegram-bot",
-  "version": "3.0.0",
+  "name": "titan-bot",
+  "version": "4.0.0",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
