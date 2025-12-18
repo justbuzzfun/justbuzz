@@ -3,234 +3,92 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ULTRA SNIPER (ORDERBOOK EDITION)</title>
-    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@600;700&display=swap" rel="stylesheet">
+    <title>TITAN GOD MODE</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
     <style>
-        body { background-color: #020202; color: #fff; font-family: 'Rajdhani', sans-serif; margin: 0; padding: 20px; }
+        body { background-color: #050505; color: #fff; font-family: 'Roboto Mono', monospace; padding: 20px; }
+        .header { border-bottom: 2px solid gold; padding-bottom: 15px; margin-bottom: 20px; display: flex; justify-content: space-between; }
+        .logo { font-size: 24px; color: gold; font-weight: bold; text-shadow: 0 0 10px gold; }
         
-        .header { border-bottom: 2px solid #00bcd4; padding-bottom: 15px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; background: #020202; z-index: 100; }
-        .logo { font-size: 24px; font-weight: bold; color: #00bcd4; letter-spacing: 2px; }
-        .badge { padding: 5px 10px; border-radius: 4px; background: #111; border: 1px solid #333; font-size: 12px; }
-        .active-session { border-color: #00ff41; color: #00ff41; animation: pulse 2s infinite; }
-
-        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 15px; }
-
-        .card { background: #0a0a0a; border: 1px solid #222; padding: 15px; border-radius: 8px; position: relative; opacity: 0.6; filter: grayscale(1); transition: 0.3s; }
+        #feed { display: flex; flex-direction: column; gap: 10px; }
         
-        /* ACTIVE STATES */
-        .card.active { opacity: 1; filter: grayscale(0); border: 2px solid #fff; order: -1; transform: scale(1.02); }
-        .card.buy { border-color: #00ff41; box-shadow: 0 0 25px rgba(0, 255, 65, 0.2); }
-        .card.sell { border-color: #ff0055; box-shadow: 0 0 25px rgba(255, 0, 85, 0.2); }
+        .card { background: #111; border: 1px solid #333; padding: 15px; border-radius: 5px; animation: slideIn 0.3s; }
+        .card.safe { border: 2px solid #00ff41; box-shadow: 0 0 20px rgba(0, 255, 65, 0.2); }
+        .card.danger { border: 1px solid #ff0055; opacity: 0.6; }
 
-        .card-header { display: flex; justify-content: space-between; font-size: 18px; font-weight: bold; margin-bottom: 10px; }
-        .data-row { display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 5px; color: #888; }
-        .val { color: #fff; font-weight: bold; }
+        .row { display: flex; justify-content: space-between; margin-bottom: 5px; font-size: 13px; }
+        .token-addr { color: #00bcd4; font-size: 11px; }
+        
+        .badge { padding: 2px 6px; border-radius: 3px; font-size: 10px; color: #000; font-weight: bold; }
+        .safe-badge { background: #00ff41; }
+        .danger-badge { background: #ff0055; color: #fff; }
 
-        /* PRESSURE BAR */
-        .pressure-container { width: 100%; height: 6px; background: #333; margin: 10px 0; border-radius: 3px; overflow: hidden; display: flex; }
-        .p-buy { height: 100%; background: #00ff41; }
-        .p-sell { height: 100%; background: #ff0055; }
-        .pressure-label { display: flex; justify-content: space-between; font-size: 10px; color: #ccc; margin-bottom: 5px; }
+        .buy-btn { width: 100%; background: #00ff41; color: #000; border: none; padding: 12px; font-weight: bold; cursor: pointer; margin-top: 10px; text-transform: uppercase; border-radius: 4px; font-size: 16px; }
+        .buy-btn:hover { background: #fff; }
 
-        .signal-msg { margin-top: 10px; padding: 8px; text-align: center; font-weight: bold; font-size: 14px; background: #111; border-radius: 4px; color: #ccc;}
-        .card.buy .signal-msg { background: #00ff41; color: #000; }
-        .card.sell .signal-msg { background: #ff0055; color: #fff; }
-
-        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.6; } 100% { opacity: 1; } }
-        #loading { text-align: center; margin-top: 50px; color: #00bcd4; }
+        @keyframes slideIn { from { transform: translateY(-10px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
     </style>
 </head>
 <body>
 
     <div class="header">
-        <div class="logo">⚖️ ULTRA OBI SCANNER</div>
-        <div class="status-box">
-            <div class="badge" id="sessionBadge">SESSION: ...</div>
-            <div class="badge">DEPTH: L2 ANALYSIS</div>
-        </div>
-        <button onclick="toggleSound()" style="background:#222; color:#fff; border:1px solid #00bcd4; padding:5px 10px; cursor:pointer;">🔊 ON</button>
+        <div class="logo">⚡ TITAN SNIPER</div>
+        <div id="status" style="color:#888">CONNECTING...</div>
     </div>
 
-    <div id="loading">CONNECTING TO ORDER BOOKS...</div>
-    <div id="grid" class="grid"></div>
+    <div id="feed">
+        <p style="color:#444; text-align:center; margin-top:50px;">Waiting for new liquidity pools...</p>
+    </div>
 
     <audio id="alertSound" src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3"></audio>
 
+    <script src="/socket.io/socket.io.js"></script>
     <script>
-        const grid = document.getElementById('grid');
-        const loading = document.getElementById('loading');
-        let soundEnabled = true;
-        let isKillzone = false;
-        let cooldowns = {};
+        const socket = io();
+        const feed = document.getElementById('feed');
+        const alertSound = document.getElementById('alertSound');
 
-        function checkTime() {
-            const now = new Date();
-            const hour = now.getHours();
-            const sessionBadge = document.getElementById('sessionBadge');
+        socket.on('status', (data) => {
+            document.getElementById('status').innerText = data.msg;
+            document.getElementById('status').style.color = "#00ff41";
+        });
+
+        socket.on('god-signal', (data) => {
+            // حذف پیام انتظار
+            if(feed.innerText.includes('Waiting')) feed.innerHTML = '';
+
+            const isSafe = data.score === 100;
+            if(isSafe) {
+                alertSound.currentTime = 0;
+                alertSound.play().catch(()=>{});
+            }
+
+            const card = document.createElement('div');
+            card.className = `card ${isSafe ? 'safe' : 'danger'}`;
             
-            if ((hour >= 18 && hour < 21) || (hour >= 23 || hour < 2)) {
-                isKillzone = true;
-                sessionBadge.innerText = "SESSION: KILLZONE 🔥";
-                sessionBadge.className = "badge active-session";
-            } else {
-                isKillzone = false;
-                sessionBadge.innerText = "SESSION: WAITING 💤";
-                sessionBadge.className = "badge";
-            }
-        }
-        setInterval(checkTime, 1000);
+            // لینک خرید سریع در Photon (بهترین پلتفرم برای اسنایپ)
+            const photonLink = `https://photon-sol.tinyastro.io/en/lp/${data.address}`;
 
-        async function init() {
-            try {
-                const res = await fetch('https://fapi.binance.com/fapi/v1/ticker/24hr');
-                const data = await res.json();
-                
-                let pairs = data
-                    .filter(p => p.symbol.endsWith('USDT') && parseFloat(p.quoteVolume) > 15000000)
-                    .sort((a, b) => parseFloat(b.quoteVolume) - parseFloat(a.quoteVolume))
-                    .slice(0, 70); // کمتر میکنیم تا سرعت اوردر بوک بالا بره
-
-                ['PNUTUSDT', 'ACTUSDT', 'FILUSDT'].forEach(s => {
-                    if(!pairs.find(p => p.symbol === s)) pairs.push({symbol: s});
-                });
-
-                loading.style.display = 'none';
-                startScanning(pairs);
-            } catch (e) { loading.innerText = "VPN REQUIRED"; }
-        }
-
-        async function startScanning(pairs) {
-            const delay = isKillzone ? 200 : 1000;
-            for (let i = 0; i < pairs.length; i++) {
-                await analyzePair(pairs[i].symbol);
-                await new Promise(r => setTimeout(r, delay));
-            }
-            setTimeout(() => startScanning(pairs), 3000);
-        }
-
-        async function analyzePair(symbol) {
-            if (cooldowns[symbol] && (Date.now() - cooldowns[symbol] < 10 * 60 * 1000)) return;
-
-            try {
-                // دریافت همزمان: کندل، نهنگ، و دفتر سفارشات (Depth)
-                const [klineRes, whaleRes, depthRes] = await Promise.all([
-                    fetch(`https://fapi.binance.com/fapi/v1/klines?symbol=${symbol}&interval=5m&limit=3`),
-                    fetch(`https://fapi.binance.com/futures/data/topLongShortAccountRatio?symbol=${symbol}&period=5m&limit=1`),
-                    fetch(`https://fapi.binance.com/fapi/v1/depth?symbol=${symbol}&limit=50`) // 50 سفارش اول
-                ]);
-
-                const klines = await klineRes.json();
-                const whaleData = await whaleRes.json();
-                const depth = await depthRes.json();
-
-                if (!whaleData.length) return;
-
-                // --- 1. تحلیل تکنیکال (شدو) ---
-                const lastCandle = klines[1];
-                const open = parseFloat(lastCandle[1]);
-                const close = parseFloat(lastCandle[4]);
-                const high = parseFloat(lastCandle[2]);
-                const low = parseFloat(lastCandle[3]);
-                const bodySize = Math.abs(close - open);
-                const lowerWick = Math.min(open, close) - low;
-                const upperWick = high - Math.max(open, close);
-
-                // --- 2. تحلیل نهنگ ---
-                const whaleRatio = parseFloat(whaleData[0].longShortRatio);
-                const whaleLongPct = (whaleRatio / (whaleRatio + 1)) * 100;
-
-                // --- 3. تحلیل فشار (Order Book Imbalance) - جدید! ---
-                let bidVol = 0; // خریداران
-                let askVol = 0; // فروشندگان
-                
-                // جمع زدن حجم ۵۰ سفارش اول
-                depth.bids.forEach(b => bidVol += parseFloat(b[1]));
-                depth.asks.forEach(a => askVol += parseFloat(a[1]));
-                
-                const totalVol = bidVol + askVol;
-                const buyPressure = (bidVol / totalVol) * 100; // درصد فشار خرید
-
-                // --- تصمیم نهایی (The God Signal) ---
-                let signal = "WAIT";
-                let cardClass = "";
-                let msg = "";
-
-                // فیلتر نوسان (رنج نباشه)
-                const volatility = ((high - low) / low) * 100;
-                if (volatility < 0.3) return; 
-
-                // شرط خرید:
-                // ۱. شدوی پایین (تکنیکال)
-                // ۲. نهنگ‌ها لانگ (سنتیمنت)
-                // ۳. فشار خرید توی اوردر بوک بالای ۶۰٪ (نقدینگی)
-                if (lowerWick > bodySize * 2 && whaleLongPct > 50 && buyPressure > 60) {
-                    signal = "🚀 FULL ALIGNMENT BUY";
-                    cardClass = "active buy";
-                    msg = `Shadow + Whales + Orderbook (${buyPressure.toFixed(0)}%)`;
-                    playSound();
-                    cooldowns[symbol] = Date.now();
-                }
-
-                // شرط فروش:
-                // ۱. شدوی بالا
-                // ۲. نهنگ‌ها شورت
-                // ۳. فشار فروش توی اوردر بوک (خرید زیر ۴۰٪)
-                else if (upperWick > bodySize * 2 && whaleLongPct < 50 && buyPressure < 40) {
-                    signal = "🩸 FULL ALIGNMENT SELL";
-                    cardClass = "active sell";
-                    msg = `Shadow + Whales + Orderbook (${(100-buyPressure).toFixed(0)}%)`;
-                    playSound();
-                    cooldowns[symbol] = Date.now();
-                }
-
-                updateCard(symbol, close, whaleLongPct, buyPressure, signal, cardClass, msg);
-
-            } catch (e) {}
-        }
-
-        function updateCard(symbol, price, whalePct, buyPressure, signal, cardClass, msg) {
-            let card = document.getElementById(symbol);
-            if (!card) {
-                card = document.createElement('div');
-                card.id = symbol;
-                grid.appendChild(card);
-            }
-
-            card.className = `card ${cardClass}`;
-            
             card.innerHTML = `
-                <div class="card-header">
-                    <span>${symbol.replace('USDT','')}</span>
-                    <span>$${price}</span>
+                <div class="row">
+                    <span class="token-addr">${data.address}</span>
+                    <span style="font-weight:bold; color:${isSafe?'#00ff41':'#ff0055'}">SCORE: ${data.score}/100</span>
                 </div>
                 
-                <div class="data-row">
-                    <span>Whales:</span> 
-                    <span class="val" style="color:${whalePct>50?'#00ff41':'#ff0055'}">${whalePct.toFixed(0)}% Long</span>
+                <div class="row">
+                    <span>Mint Auth:</span>
+                    <span class="badge ${data.mintAuth.includes('SAFE') ? 'safe-badge' : 'danger-badge'}">${data.mintAuth}</span>
                 </div>
-
-                <div class="pressure-label">
-                    <span>BUY WALL</span>
-                    <span>SELL WALL</span>
+                <div class="row">
+                    <span>Freeze Auth:</span>
+                    <span class="badge ${data.freezeAuth.includes('SAFE') ? 'safe-badge' : 'danger-badge'}">${data.freezeAuth}</span>
                 </div>
-                <div class="pressure-container">
-                    <div class="p-buy" style="width: ${buyPressure}%"></div>
-                    <div class="p-sell" style="width: ${100 - buyPressure}%"></div>
-                </div>
-                <div style="text-align:center; font-size:10px; color:#888;">Orderbook Pressure: <span style="color:#fff">${buyPressure.toFixed(0)}% Buy</span></div>
-
-                <div class="signal-msg">${signal}</div>
-                <div style="text-align:center; font-size:9px; color:#666; margin-top:5px;">${msg}</div>
+                
+                ${isSafe ? `<button class="buy-btn" onclick="window.open('${photonLink}', '_blank')">🚀 BUY ON PHOTON</button>` : '<div style="text-align:center; color:#ff0055; margin-top:5px; font-weight:bold;">⚠️ UNSAFE - DO NOT BUY</div>'}
             `;
             
-            card.style.order = cardClass.includes('active') ? "-1" : "0";
-        }
-
-        function playSound() { if(soundEnabled) document.getElementById('alertSound').play().catch(()=>{}); }
-        function toggleSound() { soundEnabled = !soundEnabled; alert("Sound: " + soundEnabled); }
-
-        checkTime();
-        init();
+            feed.prepend(card);
+        });
     </script>
 </body>
 </html>
