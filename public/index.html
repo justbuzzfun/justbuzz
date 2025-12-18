@@ -1,101 +1,19 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TITAN SNIPER</title>
-    <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
-    <style>
-        body { background-color: #000; color: #fff; font-family: 'Roboto Mono', monospace; padding: 20px; }
-        
-        .header { border-bottom: 2px solid #00ff41; padding-bottom: 15px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; }
-        .logo { font-size: 22px; color: #00ff41; font-weight: bold; text-shadow: 0 0 10px #00ff41; }
-        
-        /* وضعیت اتصال */
-        .status-badge { font-size: 10px; color: #000; background: #00ff41; padding: 4px 8px; border-radius: 4px; font-weight: bold; }
-        .status-off { background: #555; color: #ccc; }
-
-        #feed { display: flex; flex-direction: column; gap: 12px; }
-        
-        /* کارت توکن */
-        .card { background: #0a0a0a; border: 1px solid #333; padding: 15px; border-radius: 8px; animation: slideIn 0.3s ease-out; border-left: 5px solid #00ff41; box-shadow: 0 0 20px rgba(0, 255, 65, 0.1); }
-        
-        .row { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 13px; }
-        .token-addr { color: #00bcd4; font-family: monospace; letter-spacing: 1px; }
-        .badge { padding: 3px 6px; border-radius: 3px; font-size: 10px; color: #000; font-weight: bold; background: #00ff41; }
-        
-        /* دکمه خرید */
-        .buy-btn { width: 100%; background: #00ff41; color: #000; border: none; padding: 12px; font-weight: bold; cursor: pointer; margin-top: 10px; text-transform: uppercase; border-radius: 4px; font-size: 16px; transition: 0.2s; }
-        .buy-btn:hover { background: #fff; box-shadow: 0 0 15px #fff; }
-
-        @keyframes slideIn { from { transform: translateY(-10px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-        #loading { text-align: center; color: #444; margin-top: 50px; font-size: 12px; }
-    </style>
-</head>
-<body>
-
-    <div class="header">
-        <div class="logo">⚡ TITAN</div>
-        <div id="status" class="status-badge status-off">CONNECTING...</div>
-    </div>
-
-    <!-- دکمه فعال کردن صدا (چون مرورگرها صدا رو قفل میکنن) -->
-    <button onclick="enableSound()" style="background:#333; color:#fff; border:none; padding:10px; width:100%; margin-bottom:20px; cursor:pointer;">🔊 ENABLE SOUND ALERT</button>
-
-    <div id="feed">
-        <div id="loading">WAITING FOR GEMS...</div>
-    </div>
-
-    <audio id="alertSound" src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3"></audio>
-
-    <script src="/socket.io/socket.io.js"></script>
-    <script>
-        const socket = io();
-        const feed = document.getElementById('feed');
-        const alertSound = document.getElementById('alertSound');
-        const statusBadge = document.getElementById('status');
-        const loading = document.getElementById('loading');
-
-        function enableSound() {
-            alertSound.play().then(() => {
-                alertSound.pause();
-                alertSound.currentTime = 0;
-                alert("Sound Enabled! 🔊");
-            }).catch(() => {});
-        }
-
-        socket.on('status', (data) => {
-            statusBadge.innerText = "ONLINE";
-            statusBadge.classList.remove('status-off');
-        });
-
-        socket.on('god-signal', (data) => {
-            loading.style.display = 'none';
-
-            // 1. صدا و ویبره
-            alertSound.currentTime = 0;
-            alertSound.play().catch(()=>{});
-            if (navigator.vibrate) navigator.vibrate([500, 200, 500]);
-
-            // 2. ساخت کارت
-            const card = document.createElement('div');
-            card.className = 'card';
-            
-            const photonLink = `https://photon-sol.tinyastro.io/en/lp/${data.address}`;
-
-            card.innerHTML = `
-                <div class="row">
-                    <span class="token-addr">${data.address.substring(0,6)}...</span>
-                    <span class="badge">SCORE: 100</span>
-                </div>
-                <div class="row" style="color:#ccc; font-size:11px;">
-                    Mint: ${data.mintAuth} | LP: Locked
-                </div>
-                <button class="buy-btn" onclick="window.open('${photonLink}', '_blank')">🚀 APE IN</button>
-            `;
-            
-            feed.prepend(card);
-        });
-    </script>
-</body>
-</html>
+{
+  "name": "titan-telegram-bot",
+  "version": "3.0.0",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "node-telegram-bot-api": "^0.64.0",
+    "@solana/web3.js": "^1.87.6",
+    "@solana/spl-token": "^0.3.9",
+    "bs58": "^5.0.0",
+    "axios": "^1.6.0"
+  },
+  "engines": {
+    "node": "18.x"
+  }
+}
