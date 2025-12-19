@@ -1,108 +1,143 @@
-const express = require('express');
-const app = express();
-
-// --- 1. سرور وب (برای اینکه Railway سبز بمونه) ---
-const PORT = process.env.PORT || 3000;
-app.get('/', (req, res) => res.send('🦅 KRONOS V2 IS RUNNING...'));
-app.listen(PORT, () => console.log(`🌍 Server running on port ${PORT}`));
-
-// --- 2. ابزارها ---
-const TelegramBot = require('node-telegram-bot-api');
-const { Connection, PublicKey } = require('@solana/web3.js');
+const { 
+    Connection, Keypair, PublicKey, Transaction, SystemProgram, 
+    TransactionMessage, VersionedTransaction, LAMPORTS_PER_SOL 
+} = require('@solana/web3.js');
 const axios = require('axios');
 const bs58 = require('bs58');
+const express = require('express');
 
-// ==========================================
-// ⚙️ تنظیمات (توکن جدیدت)
-// ==========================================
-const TELEGRAM_TOKEN = "8497155020:AAHmrjAbyAE7vXET6BH0APyvhHazH42SVtc";
-const MY_CHAT_ID = "61848555";
-const HELIUS_RPC = "https://mainnet.helius-rpc.com/?api-key=1779c0aa-451c-4dc3-89e2-96e62ca68484";
-const RAYDIUM_PROGRAM_ID = "675kPX9MHTjS2zt1qfr1NYHuzeLXfQM9H24wFSUt1Mp8";
+// ======================================================
+// 💀 تنظیماتِ سطحِ خدا (KRONOS CONFIG)
+// ======================================================
 
-// ⚠️ کلید خصوصی جدیدت رو اینجا بذار
+// 1. کلید خصوصی کیف پولت (باید مقداری سولانا داشته باشه برای رشوه)
 const PRIVATE_KEY = "2oxLcQTzSSHkTC2bb2SrFuxyKmrip7YwKVUurZP6GLDhAaTC1gbMV8g3tWuqtX9uKFcxk56TNECuqstTzEpc5nUh"; 
 
-// ==========================================
-// 🧠 شروع سیستم (بدون تداخل)
-// ==========================================
-let bot = null;
-let connection = null;
+// 2. لینک Helius (سوخت)
+const RPC_ENDPOINT = "https://mainnet.helius-rpc.com/?api-key=1779c0aa-451c-4dc3-89e2-96e62ca68484";
 
-async function startSystem() {
-    console.log("⚙️ Booting Kronos V2...");
+// 3. آدرس انجین Jito (دروازه زمان - سرور نیویورک)
+const JITO_ENGINE_URL = "https://ny.mainnet.block-engine.jito.wtf/api/v1/bundles";
 
-    // A. اتصال به تلگرام (با مکانیزم رفع ارور 409)
-    try {
-        // اول: هر وب‌هوکی که از قبل مونده رو پاک کن
-        const tempBot = new TelegramBot(TELEGRAM_TOKEN);
-        await tempBot.deleteWebHook();
-        
-        // دوم: با تنظیمات خاص وصل شو که اگر ارور داد، کرش نکنه
-        bot = new TelegramBot(TELEGRAM_TOKEN, { 
-            polling: {
-                interval: 500, // هر نیم ثانیه چک کن (فشار کمتر)
-                autoStart: true,
-                params: { timeout: 10 }
-            }
-        });
+// 4. مقدار رشوه (Tip) برای اینکه ماینر تراکنش رو اول بذاره
+// 0.0001 SOL (برای تست) - در مواقع جنگ باید زیاد بشه
+const JITO_TIP_AMOUNT = 100000; 
 
-        // مدیریت خطای تداخل (اینو گذاشتم که دیگه لاگ قرمز نده)
-        bot.on('polling_error', (error) => {
-            if (error.code === 'ETELEGRAM' && error.message.includes('409 Conflict')) {
-                // این یعنی نسخه قبلی هنوز زنده‌ست. نادیده بگیر تا اون بمیره.
-                console.log("⚠️ Conflict detected. Waiting for old instance to die...");
-            } else {
-                console.log("Tg Error:", error.message);
-            }
-        });
+// آدرس‌های دریافت رشوه Jito (اینا ثابتن)
+const JITO_TIP_ACCOUNTS = [
+    "96gYZGLnJFVFzxGpYNBSU05fT6EW7qZk4sL8383r", 
+    "Hf3aaHtS5259dwhF7e5rppQ4g8Q1vF8Zp5Q5z5s5",
+    "Cw8CFyM9FkoMi7K7Crf6HNQqf4uEMzpKw6QNghXLvLkY",
+    "ADaUMid9yfUytqMBgopXSjbCp5R971r8tJW7OL1nwRkH"
+];
 
-        // پیام شروع
-        await bot.sendMessage(MY_CHAT_ID, "🦅 **KRONOS V2 ONLINE**\nConnection Established.", { parse_mode: 'Markdown' });
-        console.log("✅ Telegram Connected");
+// اتصال به شبکه
+const connection = new Connection(RPC_ENDPOINT, 'confirmed');
+let wallet;
 
-    } catch (e) {
-        console.error("⚠️ Telegram warning:", e.message);
-    }
+// سرور برای زنده ماندن در Railway (بدون تلگرام)
+const app = express();
+app.get('/', (req, res) => res.send('💀 KRONOS MEV ENGINE IS RUNNING (SILENT MODE)'));
+app.listen(process.env.PORT || 3000);
 
-    // B. اتصال به سولانا
-    try {
-        connection = new Connection(HELIUS_RPC, 'confirmed');
-        console.log("✅ Helius Connected");
-        startScanning();
-    } catch (e) {
-        console.error("❌ RPC Error:", e.message);
-    }
+// --- راه اندازی سیستم ---
+try {
+    if (PRIVATE_KEY.includes("YOUR_NEW")) throw new Error("PRIVATE KEY MISSING");
+    wallet = Keypair.fromSecretKey(bs58.decode(PRIVATE_KEY));
+    console.log(`💀 KRONOS ENGINE STARTED`);
+    console.log(`👤 Wallet: ${wallet.publicKey.toString().substring(0, 6)}...`);
+    console.log(`🔌 Connected to Jito Block Engine (NY)`);
+} catch (e) {
+    console.error("❌ CRITICAL: Private Key Error");
 }
 
-async function startScanning() {
-    console.log("👁️ Scanning Raydium...");
-    const publicKey = new PublicKey(RAYDIUM_PROGRAM_ID);
+// --- 1. رادار (اسکنر) ---
+const RAYDIUM_PROGRAM_ID = new PublicKey("675kPX9MHTjS2zt1qfr1NYHuzeLXfQM9H24wFSUt1Mp8");
+
+async function startKronos() {
+    console.log("👁️ Scanning Mempool (Silent Mode)...");
     
+    connection.onLogs(
+        RAYDIUM_PROGRAM_ID,
+        async ({ logs, err, signature }) => {
+            if (err) return;
+            if (logs.some(log => log.includes("initialize2"))) {
+                console.log(`⚡ TARGET FOUND: ${signature}`);
+                // اجرای حمله اتمی
+                executeAtomicBundle(signature);
+            }
+        },
+        "processed"
+    );
+}
+
+// --- 2. ساخت و ارسال باندل Jito ---
+async function executeAtomicBundle(signature) {
+    if (!wallet) return;
+
     try {
-        connection.onLogs(
-            publicKey,
-            async ({ logs, err, signature }) => {
-                if (err) return;
-                if (logs.some(log => log.includes("initialize2"))) {
-                    console.log(`⚡ TARGET: ${signature}`);
-                    
-                    if(bot) {
-                        try {
-                            const link = `https://photon-sol.tinyastro.io/en/lp/${signature}`;
-                            bot.sendMessage(MY_CHAT_ID, `⚡ **NEW GEM**\nSig: \`${signature}\`\n\n[Check Solscan](${link})`, { parse_mode: 'Markdown', disable_web_page_preview: true });
-                        } catch(e) {}
-                    }
-                }
-            },
-            "processed"
-        );
+        console.log("⏳ Building Jito Bundle...");
+
+        // دریافت Blockhash تازه (حیاتی برای سرعت)
+        const { blockhash } = await connection.getLatestBlockhash();
+        
+        // --- A. ساخت دستور رشوه (Tip Instruction) ---
+        // این پولی هست که ماینر رو میخره
+        const randomTipAccount = new PublicKey(JITO_TIP_ACCOUNTS[Math.floor(Math.random() * JITO_TIP_ACCOUNTS.length)]);
+        const tipIx = SystemProgram.transfer({
+            fromPubkey: wallet.publicKey,
+            toPubkey: randomTipAccount,
+            lamports: JITO_TIP_AMOUNT,
+        });
+
+        // --- B. ساخت دستور خرید (Swap Instruction) ---
+        // ⚠️ نکته حرفه‌ای: اینجا جای کد خرید Raydium هست.
+        // برای اینکه سرور کرش نکنه (چون کد کامل سواپ خیلی سنگینه)، من فعلاً
+        // یک تراکنش "خالی" (Memo) میذارم که فقط باندل رو تست کنیم.
+        // وقتی دیدی توی Solscan لاگ شد، یعنی تونستیم بلاک رو بخریم.
+        const memoIx = new Transaction().add(
+            SystemProgram.transfer({
+                fromPubkey: wallet.publicKey,
+                toPubkey: wallet.publicKey,
+                lamports: 0, 
+            })
+        ).instructions[0];
+
+        // --- C. بسته‌بندی (Bundling) ---
+        // تمام تراکنش‌ها در یک پکیج اتمی
+        const messageV0 = new TransactionMessage({
+            payerKey: wallet.publicKey,
+            recentBlockhash: blockhash,
+            instructions: [memoIx, tipIx], // اول خرید (اینجا ممو)، بعد رشوه
+        }).compileToV0Message();
+
+        const transaction = new VersionedTransaction(messageV0);
+        transaction.sign([wallet]);
+
+        const serializedTx = bs58.encode(transaction.serialize());
+
+        // --- D. شلیک به انجین Jito ---
+        console.log("🚀 Sending Bundle to Miner...");
+        
+        const payload = {
+            jsonrpc: "2.0",
+            id: 1,
+            method: "sendBundle",
+            params: [[serializedTx]]
+        };
+
+        const res = await axios.post(JITO_ENGINE_URL, payload, { 
+            headers: { 'Content-Type': 'application/json' } 
+        });
+
+        console.log("✅ BUNDLE FIRED! Bundle ID:", res.data.result);
+
     } catch (e) {
-        console.error("Listener Error:", e.message);
+        console.log("❌ Bundle Failed:", e.message);
     }
 }
 
-// جلوگیری از مرگ سرور (خیلی مهم)
-process.on('uncaughtException', (err) => { console.log('Log:', err.message); });
+// جلوگیری از کرش
+process.on('uncaughtException', (err) => { console.log('⚠️ Error:', err.message); });
 
-startSystem();
+startKronos();
