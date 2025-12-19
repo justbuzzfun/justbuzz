@@ -3,18 +3,45 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>KRONOS SYSTEM</title>
+    <title>KRONOS ENGINE</title>
+    <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
     <style>
-        body { background: #000; color: #00ff41; display: flex; justify-content: center; align-items: center; height: 100vh; font-family: monospace; font-size: 24px; text-align: center; }
-        .blink { animation: blink 1s infinite; }
-        @keyframes blink { 50% { opacity: 0; } }
+        body { background-color: #000; color: #ff0055; font-family: 'Share Tech Mono', monospace; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; text-align: center; }
+        
+        h1 { font-size: 40px; text-shadow: 0 0 20px #ff0055; margin-bottom: 10px; letter-spacing: 5px; }
+        .status { color: #fff; font-size: 14px; margin-top: 20px; }
+        
+        .loader {
+            border: 4px solid #111; border-top: 4px solid #ff0055; border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; margin-bottom: 20px;
+        }
+
+        .log-box {
+            margin-top: 30px; border: 1px dashed #333; padding: 15px; color: #666; font-size: 12px; width: 300px;
+        }
+
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
-    <div>
-        <p>🦅 KRONOS IS ONLINE</p>
-        <p style="font-size:14px; color:#fff;">Target: Solana Mainnet</p>
-        <p class="blink">● LISTENING...</p>
+
+    <div class="loader"></div>
+    <h1>KRONOS</h1>
+    <div style="color: gold; font-size: 12px; letter-spacing: 2px;">ATOMIC MEV ENGINE</div>
+
+    <div class="status">
+        SYSTEM STATUS: <span style="color:#00ff41">ACTIVE</span><br>
+        TARGET: <span style="color:#fff">SOLANA MAINNET</span>
     </div>
+
+    <div class="log-box">
+        Running in background...<br>
+        Listening for Liquidity Pools...<br>
+        Jito Bundles: READY
+    </div>
+
+    <script>
+        // رفرش خودکار برای اینکه سرور به خواب نره
+        setTimeout(() => window.location.reload(), 600000);
+    </script>
 </body>
 </html>
