@@ -1,6 +1,6 @@
 {
-  "name": "kronos-mev-real",
-  "version": "6.6.6",
+  "name": "kronos-engine",
+  "version": "6.0.0",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
