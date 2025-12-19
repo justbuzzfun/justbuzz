@@ -1,5 +1,5 @@
 {
-  "name": "kronos-engine",
+  "name": "kronos-bot",
   "version": "5.0.0",
   "main": "server.js",
   "scripts": {
@@ -7,7 +7,9 @@
   },
   "dependencies": {
     "express": "^4.18.2",
+    "node-telegram-bot-api": "^0.64.0",
     "@solana/web3.js": "^1.87.6",
+    "@solana/spl-token": "^0.3.9",
     "bs58": "^5.0.0",
     "axios": "^1.6.0"
   },
