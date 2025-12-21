@@ -1,69 +1,52 @@
 const { Connection, PublicKey } = require('@solana/web3.js');
 const express = require('express');
 
-// ==========================================
-// ⚙️ تنظیمات اتصال (فیکس شده)
-// ==========================================
-const HELIUS_KEY = "1779c0aa-451c-4dc3-89e2-96e62ca68484";
-
-// جدا کردن آدرس ارسال (HTTP) و آدرس شنود (WSS)
-const HTTP_URL = `https://mainnet.helius-rpc.com/?api-key=${HELIUS_KEY}`;
-const WSS_URL = `wss://mainnet.helius-rpc.com/?api-key=${HELIUS_KEY}`;
-
+// --- تنظیمات ---
+const HELIUS_RPC = "https://mainnet.helius-rpc.com/?api-key=1779c0aa-451c-4dc3-89e2-96e62ca68484";
 const RAYDIUM_PROGRAM_ID = new PublicKey("675kPX9MHTjS2zt1qfr1NYHuzeLXfQM9H24wFSUt1Mp8");
 
-// سرور وب برای زنده ماندن
+// سرور وب
 const app = express();
-app.get('/', (req, res) => res.send('🩺 DIAGNOSTIC MODE: WSS FORCED'));
+app.get('/', (req, res) => res.send('👁️ DEBUG MODE ACTIVE'));
 app.listen(process.env.PORT || 3000);
 
-console.log("🩺 STARTING DIAGNOSTIC MODE...");
-console.log(`🔗 HTTP: ${HTTP_URL.substring(0, 20)}...`);
-console.log(`🔗 WSS:  ${WSS_URL.substring(0, 20)}...`);
+console.log("🛠️ DEBUG MODE STARTED: TESTING CONNECTION...");
 
-// تنظیمات اتصال با وب‌سوکت اجباری
-const connection = new Connection(HTTP_URL, {
-    wsEndpoint: WSS_URL,
-    commitment: 'processed' // سریع‌ترین حالت
+// اتصال
+const connection = new Connection(HELIUS_RPC, {
+    wsEndpoint: HELIUS_RPC.replace('https', 'wss'), // اطمینان از سوکت
+    commitment: 'processed'
 });
 
-// --- 1. تست ضربان قلب (هر ۱۰ ثانیه) ---
-setInterval(async () => {
+async function startDebug() {
     try {
         const slot = await connection.getSlot();
-        console.log(`💗 System Pulse | Slot: ${slot} (Connection OK)`);
-    } catch (e) {
-        console.error("⚠️ Connection Error:", e.message);
-    }
-}, 10000);
+        console.log(`✅ Connection OK | Current Slot: ${slot}`);
+        
+        console.log("🎧 Listening to ALL Raydium activity (No Filters)...");
 
-// --- 2. شنود مطلق (بدون فیلتر) ---
-async function startListening() {
-    console.log("📡 Subscribing to Raydium Events...");
-    
-    try {
         connection.onLogs(
             RAYDIUM_PROGRAM_ID,
-            (logs) => {
-                if (logs.err) return;
-
-                // هر چیزی که از Raydium میاد رو نشون بده (فقط برای اینکه ببینیم وصله)
-                console.log(`📨 Log: ${logs.signature.substring(0,10)}...`);
-
-                // اگه توکن جدید بود، جیغ بزن
-                if (logs.logs.some(l => l.includes("initialize2"))) {
-                    console.log(`🔥🔥🔥 NEW POOL FOUND: ${logs.signature}`);
+            (info) => {
+                // اینجا هر چیزی که اتفاق بیفته رو چاپ میکنیم
+                // فقط برای اینکه ببینیم چشمش بازه یا نه
+                if (Math.random() < 0.1) { // (فقط ۱۰ درصد رو نشون میدیم که لاگ نترکه)
+                    console.log(`👀 I SEE ACTIVITY! Sig: ${info.signature.substring(0,10)}...`);
+                    
+                    if (info.logs.some(l => l.includes("initialize2"))) {
+                        console.log(`🔥 BINGO! FOUND 'initialize2' HERE!`);
+                    }
                 }
             },
             "processed"
         );
-        console.log("✅ WebSocket Subscription Sent.");
+
     } catch (e) {
-        console.error("❌ Subscription Failed:", e.message);
+        console.error("❌ CONNECTION FAILED:", e.message);
     }
 }
 
-// جلوگیری از کرش
-process.on('uncaughtException', (err) => { console.log('Error:', err.message); });
+// ضربان قلب
+setInterval(() => console.log("💗 Still Waiting..."), 10000);
 
-startListening();
+startDebug();
