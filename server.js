@@ -4,54 +4,53 @@ const axios = require('axios');
 const express = require('express');
 
 // ==========================================
-// ⚙️ تنظیمات (توکن جدید جایگزین شد)
+// ⚙️ تنظیمات (اینجا رو درست کن)
 // ==========================================
-const TELEGRAM_TOKEN = "7964377047:AAFfxhpOy-a3p0L_VbOfL2qriZxeyFNYX7o"; 
+
+// ⚠️ توکن جدید رو از BotFather بگیر و بذار اینجا بین دو تا " "
+const TELEGRAM_TOKEN = "7964377047:AAFfxhpOy-a3p0L_VbOfL2qriZxeyFNYX7o";
+
 const MY_CHAT_ID = "61848555";
 const HELIUS_RPC = "https://mainnet.helius-rpc.com/?api-key=1779c0aa-451c-4dc3-89e2-96e62ca68484";
-const RAYDIUM_PROGRAM_ID = "675kPX9MHTjS2zt1qfr1NYHuzeLXfQM9H24wFSUt1Mp8";
+const RAYDIUM_PROGRAM_ID = "7964377047:AAFfxhpOy-a3p0L_VbOfL2qriZxeyFNYX7o";
 
 // ==========================================
-// 🚀 سیستم ضد تداخل
+// 🚀 سیستم
 // ==========================================
 let bot = null;
 const connection = new Connection(HELIUS_RPC, 'confirmed');
 
 const app = express();
-app.get('/', (req, res) => res.send('🦅 KRONOS V2 IS ACTIVE'));
+app.get('/', (req, res) => res.send('🦅 KRONOS V3 IS ACTIVE'));
 app.listen(process.env.PORT || 3000);
 
-console.log("🦅 STARTING KRONOS V2...");
+console.log("🦅 STARTING KRONOS V3...");
 
 async function startSystem() {
     try {
-        // 1. اول اتصال قبلی رو قطع میکنیم
-        const tempBot = new TelegramBot(TELEGRAM_TOKEN);
-        await tempBot.deleteWebHook();
-        console.log("🧹 Old sessions cleared.");
-
-        // 2. حالا تمیز وصل میشیم
+        // اتصال به تلگرام
         bot = new TelegramBot(TELEGRAM_TOKEN, { 
             polling: {
-                interval: 1000,  // هر 1 ثانیه چک کن
+                interval: 1000,
                 autoStart: true,
                 params: { timeout: 10 }
             }
         });
 
-        // 3. مدیریت ارورهای احتمالی
+        // مدیریت ارور توکن اشتباه (401)
         bot.on('polling_error', (error) => {
-            if (error.code === 'ETELEGRAM' && error.message.includes('409 Conflict')) {
-                console.log("⚠️ Conflict detected... Retrying in 5s");
+            if (error.code === 'ETELEGRAM' && error.message.includes('401 Unauthorized')) {
+                console.error("❌ CRITICAL: Token is invalid! Please update server.js");
+                process.exit(1); // خاموش شو تا درستش کنی
             } else {
-                console.log("TG Error:", error.message);
+                console.log("TG Log:", error.message);
             }
         });
 
-        console.log("✅ Telegram Connected Successfully");
+        console.log("✅ Telegram Connected");
         
         // پیام شروع
-        bot.sendMessage(MY_CHAT_ID, "🦅 **KRONOS V2 REBOOTED**\nNew Token Active.\nScanning Market...", { parse_mode: 'Markdown' });
+        bot.sendMessage(MY_CHAT_ID, "🦅 **KRONOS RECONNECTED**\nNew Token Verified.\nScanning Market...", { parse_mode: 'Markdown' });
 
         startScanning();
 
@@ -61,7 +60,7 @@ async function startSystem() {
 }
 
 async function startScanning() {
-    console.log("👁️ Watching Raydium...");
+    console.log("👁️ Scanning Raydium...");
     const publicKey = new PublicKey(RAYDIUM_PROGRAM_ID);
     
     connection.onLogs(
@@ -70,7 +69,6 @@ async function startScanning() {
             if (err) return;
             if (logs.some(log => log.includes("initialize2"))) {
                 console.log(`⚡ POOL: ${signature}`);
-                // تاخیر برای ایندکس
                 setTimeout(() => processToken(signature), 4000);
             }
         },
@@ -108,19 +106,13 @@ async function checkInsiderAndSecurity(mint) {
 
         const risks = data.risks || [];
         const score = data.score;
-
-        const deadly = risks.filter(r => 
-            r.name === 'Mint Authority' || 
-            r.name === 'Freeze Authority' || 
-            r.name === 'Liquidity Not Locked'
-        );
+        const deadly = risks.filter(r => r.name === 'Mint Authority' || r.name === 'Freeze Authority' || r.name === 'Liquidity Not Locked');
 
         if (deadly.length > 0) {
             console.log(`🛑 UNSAFE: ${mint}`);
             return;
         }
 
-        // تحلیل اینسایدر
         const topHolders = data.topHolders || [];
         let insiderPct = 0;
         topHolders.forEach(h => {
@@ -133,7 +125,6 @@ async function checkInsiderAndSecurity(mint) {
         if (insiderPct > 15) type = "💎 INSIDER / VC PLAY";
 
         sendAlert(mint, score, insiderPct, type);
-
     } catch (e) { console.log("API Error"); }
 }
 
@@ -156,7 +147,6 @@ ${type}
     bot.sendMessage(MY_CHAT_ID, msg, { parse_mode: 'Markdown', disable_web_page_preview: true });
 }
 
-// سیستم ضد مرگ
-process.on('uncaughtException', (err) => { console.log('⚠️ Error:', err.message); });
+process.on('uncaughtException', (err) => { console.log('Log:', err.message); });
 
 startSystem();
