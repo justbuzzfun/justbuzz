@@ -3,120 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LIQUIDITY ORACLE</title>
-    <link href="https://fonts.googleapis.com/css2?family=Syncopate:wght@400;700&display=swap" rel="stylesheet">
+    <title>RAYDIUM RADAR</title>
     <style>
-        body { background-color: #050505; color: #e0e0e0; font-family: 'Syncopate', sans-serif; margin: 0; padding: 20px; text-transform: uppercase; }
-        .header { border-bottom: 2px solid #583dff; padding-bottom: 20px; margin-bottom: 30px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; background: #050505; z-index: 100; }
-        .logo { font-size: 24px; font-weight: bold; color: #583dff; text-shadow: 0 0 15px #583dff; }
-        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; }
-        .card { background: #0a0a0a; border: 1px solid #222; padding: 20px; border-radius: 12px; position: relative; transition: 0.3s; opacity: 0.7; }
-        .card.bullish { border: 2px solid #00ff41; box-shadow: 0 0 30px rgba(0, 255, 65, 0.15); opacity: 1; order: -1; }
-        .card.bearish { border: 2px solid #ff0055; box-shadow: 0 0 30px rgba(255, 0, 85, 0.15); opacity: 1; order: -1; }
-        .header-row { display: flex; justify-content: space-between; font-size: 20px; font-weight: bold; margin-bottom: 15px; }
-        .bar-container { margin-bottom: 15px; }
-        .bar-label { display: flex; justify-content: space-between; font-size: 10px; color: #666; margin-bottom: 5px; }
-        .progress-bg { height: 8px; background: #222; border-radius: 4px; overflow: hidden; }
-        .progress-fill { height: 100%; transition: width 1s ease; }
-        .fill-long { background: #00ff41; }
-        .fill-short { background: #ff0055; }
-        .prediction-box { text-align: center; padding: 15px; border-radius: 8px; font-weight: bold; margin-top: 15px; font-size: 14px; letter-spacing: 1px; }
-        .bullish .prediction-box { background: rgba(0, 255, 65, 0.1); color: #00ff41; border: 1px solid #00ff41; }
-        .bearish .prediction-box { background: rgba(255, 0, 85, 0.1); color: #ff0055; border: 1px solid #ff0055; }
-        #loading { text-align: center; margin-top: 100px; color: #583dff; animation: pulse 1.5s infinite; }
-        @keyframes pulse { 0% { opacity: 0.5; } 50% { opacity: 1; } 100% { opacity: 0.5; } }
+        body { background: #050505; color: #00d4ff; display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100vh; margin: 0; font-family: monospace; font-size: 20px; text-align: center; }
+        .blink { animation: blink 1.5s infinite; color: #fff; }
+        @keyframes blink { 50% { opacity: 0; } }
     </style>
 </head>
 <body>
-    <div class="header">
-        <div class="logo">🔮 ORACLE</div>
-        <div>SENTIMENT SCANNER</div>
-    </div>
-    <div id="loading">SCANNING THE MATRIX... (USE VPN)</div>
-    <div id="grid" class="grid"></div>
-    <script>
-        const grid = document.getElementById('grid');
-        const loading = document.getElementById('loading');
-        const pairs = ['BTCUSDT', 'ETHUSDT', 'SOLUSDT', 'XRPUSDT', 'BNBUSDT', 'DOGEUSDT', 'ADAUSDT', 'LINKUSDT', 'MATICUSDT', 'LTCUSDT', 'AVAXUSDT', 'DOTUSDT', 'FILUSDT', 'PNUTUSDT', 'ACTUSDT', '1000PEPEUSDT'];
-
-        async function init() {
-            grid.innerHTML = '';
-            const promises = pairs.map(pair => analyzeLiquidity(pair));
-            await Promise.all(promises);
-            loading.style.display = 'none';
-        }
-
-        async function analyzeLiquidity(symbol) {
-            try {
-                const [globalRatioRes, tickerRes, klineRes] = await Promise.all([
-                    fetch(`https://fapi.binance.com/futures/data/globalLongShortAccountRatio?symbol=${symbol}&period=5m&limit=1`),
-                    fetch(`https://fapi.binance.com/fapi/v1/ticker/24hr?symbol=${symbol}`),
-                    fetch(`https://fapi.binance.com/fapi/v1/klines?symbol=${symbol}&interval=1h&limit=10`)
-                ]);
-
-                const globalData = await globalRatioRes.json();
-                const ticker = await tickerRes.json();
-                const klines = await klineRes.json();
-
-                if (!globalData.length) return;
-
-                const longAccount = parseFloat(globalData[0].longAccount);
-                const shortAccount = parseFloat(globalData[0].shortAccount);
-                const price = parseFloat(ticker.lastPrice);
-                
-                const highs = klines.map(k => parseFloat(k[2]));
-                const lows = klines.map(k => parseFloat(k[3]));
-                const recentHigh = Math.max(...highs);
-                const recentLow = Math.min(...lows);
-
-                let prediction = "NEUTRAL";
-                let target = "WAITING...";
-                let cardClass = "";
-                let confidence = 0;
-
-                if (longAccount > 60) {
-                    prediction = "🩸 LIQUIDATION DROP";
-                    target = `TARGET: ${recentLow}`;
-                    cardClass = "bearish";
-                    confidence = longAccount;
-                } else if (shortAccount > 60) {
-                    prediction = "🚀 SHORT SQUEEZE";
-                    target = `TARGET: ${recentHigh}`;
-                    cardClass = "bullish";
-                    confidence = shortAccount;
-                }
-
-                renderCard(symbol, price, longAccount, shortAccount, prediction, target, cardClass, confidence);
-            } catch (e) { console.log(e); }
-        }
-
-        function renderCard(symbol, price, longs, shorts, prediction, target, cardClass, confidence) {
-            const card = document.createElement('div');
-            card.className = `card ${cardClass}`;
-            const barColor = longs > shorts ? 'fill-long' : 'fill-short';
-            const majority = longs > shorts ? `${longs.toFixed(0)}% BULLS` : `${shorts.toFixed(0)}% BEARS`;
-
-            card.innerHTML = `
-                <div class="header-row">
-                    <span>${symbol.replace('USDT','')}</span>
-                    <span>$${price}</span>
-                </div>
-                <div class="bar-container">
-                    <div class="bar-label"><span>CROWD</span><span style="color:${longs>shorts?'#00ff41':'#ff0055'}">${majority}</span></div>
-                    <div class="progress-bg"><div class="progress-fill ${barColor}" style="width: ${Math.max(longs, shorts)}%"></div></div>
-                </div>
-                <div class="prediction-box">
-                    <div>MATRIX MOVE:</div>
-                    <div style="font-size:20px; margin:5px 0;">${prediction}</div>
-                    <div style="font-size:10px; color:#888;">${target}</div>
-                </div>
-            `;
-            if (cardClass !== "") card.style.order = `-${Math.floor(confidence)}`;
-            else card.style.order = "0";
-            grid.appendChild(card);
-        }
-        init();
-        setInterval(init, 30000);
-    </script>
+    <h1>💧 RAYDIUM RADAR</h1>
+    <p>STATUS: <span style="color:#00ff41">ONLINE</span></p>
+    <p class="blink">● SCANNING MEMPOOL...</p>
+    <br>
+    <small style="color:#555">Check Telegram for Alerts</small>
 </body>
 </html>
