@@ -4,27 +4,64 @@ const axios = require('axios');
 const express = require('express');
 
 // ==========================================
-// ⚙️ تنظیمات
+// ⚙️ تنظیمات (توکن جدید جایگزین شد)
 // ==========================================
-const TELEGRAM_TOKEN = "8497155020:AAHmrjAbyAE7vXET6BH0APyvhHazH42SVtc";
+const TELEGRAM_TOKEN = "7964377047:AAFfxhpOy-a3p0L_VbOfL2qriZxeyFNYX7o"; 
 const MY_CHAT_ID = "61848555";
 const HELIUS_RPC = "https://mainnet.helius-rpc.com/?api-key=1779c0aa-451c-4dc3-89e2-96e62ca68484";
 const RAYDIUM_PROGRAM_ID = "675kPX9MHTjS2zt1qfr1NYHuzeLXfQM9H24wFSUt1Mp8";
 
 // ==========================================
-// 🚀 سیستم
+// 🚀 سیستم ضد تداخل
 // ==========================================
-const bot = new TelegramBot(TELEGRAM_TOKEN, { polling: true });
+let bot = null;
 const connection = new Connection(HELIUS_RPC, 'confirmed');
 
 const app = express();
-app.get('/', (req, res) => res.send('🕵️ INSIDER RADAR ACTIVE'));
+app.get('/', (req, res) => res.send('🦅 KRONOS V2 IS ACTIVE'));
 app.listen(process.env.PORT || 3000);
 
-console.log("🦅 INSIDER RADAR STARTED...");
+console.log("🦅 STARTING KRONOS V2...");
+
+async function startSystem() {
+    try {
+        // 1. اول اتصال قبلی رو قطع میکنیم
+        const tempBot = new TelegramBot(TELEGRAM_TOKEN);
+        await tempBot.deleteWebHook();
+        console.log("🧹 Old sessions cleared.");
+
+        // 2. حالا تمیز وصل میشیم
+        bot = new TelegramBot(TELEGRAM_TOKEN, { 
+            polling: {
+                interval: 1000,  // هر 1 ثانیه چک کن
+                autoStart: true,
+                params: { timeout: 10 }
+            }
+        });
+
+        // 3. مدیریت ارورهای احتمالی
+        bot.on('polling_error', (error) => {
+            if (error.code === 'ETELEGRAM' && error.message.includes('409 Conflict')) {
+                console.log("⚠️ Conflict detected... Retrying in 5s");
+            } else {
+                console.log("TG Error:", error.message);
+            }
+        });
+
+        console.log("✅ Telegram Connected Successfully");
+        
+        // پیام شروع
+        bot.sendMessage(MY_CHAT_ID, "🦅 **KRONOS V2 REBOOTED**\nNew Token Active.\nScanning Market...", { parse_mode: 'Markdown' });
+
+        startScanning();
+
+    } catch (e) {
+        console.error("Startup Error:", e.message);
+    }
+}
 
 async function startScanning() {
-    console.log("👁️ Scanning for Whales...");
+    console.log("👁️ Watching Raydium...");
     const publicKey = new PublicKey(RAYDIUM_PROGRAM_ID);
     
     connection.onLogs(
@@ -32,8 +69,8 @@ async function startScanning() {
         async ({ logs, err, signature }) => {
             if (err) return;
             if (logs.some(log => log.includes("initialize2"))) {
-                console.log(`⚡ POOL FOUND: ${signature}`);
-                // 4 ثانیه صبر میکنیم تا توزیع توکن انجام بشه و دیتابیس آپدیت شه
+                console.log(`⚡ POOL: ${signature}`);
+                // تاخیر برای ایندکس
                 setTimeout(() => processToken(signature), 4000);
             }
         },
@@ -67,13 +104,11 @@ async function checkInsiderAndSecurity(mint) {
     try {
         const res = await axios.get(`https://api.rugcheck.xyz/v1/tokens/${mint}/report/summary`);
         const data = res.data;
-        
         if (!data) return;
 
         const risks = data.risks || [];
         const score = data.score;
 
-        // 1. فیلتر امنیتی (اول امنیت!)
         const deadly = risks.filter(r => 
             r.name === 'Mint Authority' || 
             r.name === 'Freeze Authority' || 
@@ -85,37 +120,24 @@ async function checkInsiderAndSecurity(mint) {
             return;
         }
 
-        // 2. تحلیل اینسایدر (توزیع توکن) 🕵️‍♂️
+        // تحلیل اینسایدر
         const topHolders = data.topHolders || [];
         let insiderPct = 0;
-        let whaleCount = 0;
-
-        // جمع زدن موجودی ۱۰ نفر اول (به جز استخر نقدینگی)
         topHolders.forEach(h => {
-            if (!h.address.includes("Raydium") && !h.address.includes("5Q544")) { // فیلتر آدرس‌های صرافی
+            if (!h.address.includes("Raydium") && !h.address.includes("5Q544")) {
                 insiderPct += h.pct;
-                if(h.pct > 2) whaleCount++; // کسی که بیشتر از ۲٪ داره نهنگه
             }
         });
 
-        // 3. تشخیص نوع پروژه
         let type = "🟢 FAIR LAUNCH";
-        let urgency = "";
-        
-        if (insiderPct > 15) {
-            type = "💎 INSIDER / VC PLAY";
-            urgency = "🔥 WHALES ARE INSIDE!";
-        } else if (insiderPct > 50) {
-            type = "⚠️ HIGH RISK (Centralized)"; // اگه خیلی زیاد دستشون باشه خطرناکه
-        }
+        if (insiderPct > 15) type = "💎 INSIDER / VC PLAY";
 
-        console.log(`✅ GEM: ${mint} | Insiders: ${insiderPct.toFixed(1)}%`);
-        sendAlert(mint, score, insiderPct, type, urgency);
+        sendAlert(mint, score, insiderPct, type);
 
     } catch (e) { console.log("API Error"); }
 }
 
-function sendAlert(address, score, insiderPct, type, urgency) {
+function sendAlert(address, score, insiderPct, type) {
     const trojanLink = `https://t.me/solana_trojanbot?start=${address}`;
     const photonLink = `https://photon-sol.tinyastro.io/en/lp/${address}`;
 
@@ -123,26 +145,18 @@ function sendAlert(address, score, insiderPct, type, urgency) {
 ${type}
 
 📜 \`${address}\`
-(Tap to Copy)
 
-🕵️‍♂️ **Inside Info:**
-• Held by Whales: **${insiderPct.toFixed(1)}%**
-• Safety Score: ${score} (Safe)
-• Mint/Freeze: Disabled
+🕵️‍♂️ **Insiders:** ${insiderPct.toFixed(1)}%
+🛡️ **Score:** ${score} (Safe)
 
-${urgency}
-
-🛒 **SNIPE NOW:**
-🦄 [Trojan](${trojanLink})
-📊 [Photon](${photonLink})
+🛒 **SNIPE:**
+🦄 [Trojan](${trojanLink}) | 📊 [Photon](${photonLink})
     `;
 
-    bot.sendMessage(MY_CHAT_ID, msg, { 
-        parse_mode: 'Markdown', 
-        disable_web_page_preview: true 
-    });
+    bot.sendMessage(MY_CHAT_ID, msg, { parse_mode: 'Markdown', disable_web_page_preview: true });
 }
 
+// سیستم ضد مرگ
 process.on('uncaughtException', (err) => { console.log('⚠️ Error:', err.message); });
 
-startScanning();
+startSystem();
