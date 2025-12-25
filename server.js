@@ -4,53 +4,55 @@ const axios = require('axios');
 const express = require('express');
 
 // ==========================================
-// ⚙️ تنظیمات (اینجا رو درست کن)
+// ⚙️ تنظیمات نهایی (با توکن جدید)
 // ==========================================
-
-// ⚠️ توکن جدید رو از BotFather بگیر و بذار اینجا بین دو تا " "
 const TELEGRAM_TOKEN = "7964377047:AAFfxhpOy-a3p0L_VbOfL2qriZxeyFNYX7o";
-
 const MY_CHAT_ID = "61848555";
 const HELIUS_RPC = "https://mainnet.helius-rpc.com/?api-key=1779c0aa-451c-4dc3-89e2-96e62ca68484";
-const RAYDIUM_PROGRAM_ID = "7964377047:AAFfxhpOy-a3p0L_VbOfL2qriZxeyFNYX7o";
+const RAYDIUM_PROGRAM_ID = "675kPX9MHTjS2zt1qfr1NYHuzeLXfQM9H24wFSUt1Mp8";
 
 // ==========================================
-// 🚀 سیستم
+// 🚀 سیستم سرور (برای سبز ماندن)
+// ==========================================
+const app = express();
+app.get('/', (req, res) => res.send('🦅 KRONOS V3 IS RUNNING...'));
+app.listen(process.env.PORT || 3000);
+
+// ==========================================
+// 🧠 راه‌اندازی ربات (ضد تداخل 409)
 // ==========================================
 let bot = null;
 const connection = new Connection(HELIUS_RPC, 'confirmed');
 
-const app = express();
-app.get('/', (req, res) => res.send('🦅 KRONOS V3 IS ACTIVE'));
-app.listen(process.env.PORT || 3000);
-
-console.log("🦅 STARTING KRONOS V3...");
-
 async function startSystem() {
+    console.log("⚙️ Starting Kronos V3...");
+
     try {
-        // اتصال به تلگرام
+        // تنظیمات خاص برای جلوگیری از Conflict
         bot = new TelegramBot(TELEGRAM_TOKEN, { 
             polling: {
-                interval: 1000,
+                interval: 2000,  // هر 2 ثانیه چک کن (فشار کمتر)
                 autoStart: true,
                 params: { timeout: 10 }
             }
         });
 
-        // مدیریت ارور توکن اشتباه (401)
+        // این قطعه کد جلوی پر شدن لاگ‌ها با ارور زرد رو می‌گیره
         bot.on('polling_error', (error) => {
-            if (error.code === 'ETELEGRAM' && error.message.includes('401 Unauthorized')) {
-                console.error("❌ CRITICAL: Token is invalid! Please update server.js");
-                process.exit(1); // خاموش شو تا درستش کنی
+            if (error.code === 'ETELEGRAM' && error.message.includes('409 Conflict')) {
+                // نادیده بگیر، چون نسخه جدید داره جایگزین میشه
+                console.log("⚠️ Conflict Handled. Waiting for old instance to close...");
             } else {
-                console.log("TG Log:", error.message);
+                console.log("TG Error:", error.message);
             }
         });
 
         console.log("✅ Telegram Connected");
         
-        // پیام شروع
-        bot.sendMessage(MY_CHAT_ID, "🦅 **KRONOS RECONNECTED**\nNew Token Verified.\nScanning Market...", { parse_mode: 'Markdown' });
+        // ارسال پیام شروع (تست)
+        try {
+            await bot.sendMessage(MY_CHAT_ID, "🦅 **KRONOS V3 ONLINE**\nConflict Fixed.\nScanning Market...", { parse_mode: 'Markdown' });
+        } catch(e) { console.log("Msg Error (User hasn't started bot yet)"); }
 
         startScanning();
 
@@ -59,6 +61,7 @@ async function startSystem() {
     }
 }
 
+// --- اسکنر ---
 async function startScanning() {
     console.log("👁️ Scanning Raydium...");
     const publicKey = new PublicKey(RAYDIUM_PROGRAM_ID);
@@ -68,14 +71,16 @@ async function startScanning() {
         async ({ logs, err, signature }) => {
             if (err) return;
             if (logs.some(log => log.includes("initialize2"))) {
-                console.log(`⚡ POOL: ${signature}`);
-                setTimeout(() => processToken(signature), 4000);
+                console.log(`⚡ TARGET: ${signature}`);
+                // تاخیر برای ایندکس شدن
+                setTimeout(() => processToken(signature), 3000);
             }
         },
         "processed"
     );
 }
 
+// --- پردازش توکن ---
 async function processToken(signature) {
     try {
         const tx = await connection.getParsedTransaction(signature, { maxSupportedTransactionVersion: 0 });
@@ -98,6 +103,7 @@ async function processToken(signature) {
     } catch (e) { console.log("Parse Error"); }
 }
 
+// --- امنیت و اینسایدر ---
 async function checkInsiderAndSecurity(mint) {
     try {
         const res = await axios.get(`https://api.rugcheck.xyz/v1/tokens/${mint}/report/summary`);
@@ -106,7 +112,12 @@ async function checkInsiderAndSecurity(mint) {
 
         const risks = data.risks || [];
         const score = data.score;
-        const deadly = risks.filter(r => r.name === 'Mint Authority' || r.name === 'Freeze Authority' || r.name === 'Liquidity Not Locked');
+
+        const deadly = risks.filter(r => 
+            r.name === 'Mint Authority' || 
+            r.name === 'Freeze Authority' || 
+            r.name === 'Liquidity Not Locked'
+        );
 
         if (deadly.length > 0) {
             console.log(`🛑 UNSAFE: ${mint}`);
@@ -125,10 +136,13 @@ async function checkInsiderAndSecurity(mint) {
         if (insiderPct > 15) type = "💎 INSIDER / VC PLAY";
 
         sendAlert(mint, score, insiderPct, type);
+
     } catch (e) { console.log("API Error"); }
 }
 
 function sendAlert(address, score, insiderPct, type) {
+    if(!bot) return;
+
     const trojanLink = `https://t.me/solana_trojanbot?start=${address}`;
     const photonLink = `https://photon-sol.tinyastro.io/en/lp/${address}`;
 
@@ -147,6 +161,7 @@ ${type}
     bot.sendMessage(MY_CHAT_ID, msg, { parse_mode: 'Markdown', disable_web_page_preview: true });
 }
 
-process.on('uncaughtException', (err) => { console.log('Log:', err.message); });
+// ضد مرگ
+process.on('uncaughtException', (err) => { console.log('Server Error:', err.message); });
 
 startSystem();
